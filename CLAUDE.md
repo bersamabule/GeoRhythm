@@ -236,12 +236,14 @@ Examples:
 | 2025-12-16 | Practice mode with checkpoints | - |
 | 2025-12-16 | Jump pads and orbs implemented | - |
 | 2025-12-16 | UI scenes (MainMenu, LevelSelect, Settings) | - |
+| 2025-12-16 | Fix: Container setSize for collision detection | - |
 
 ### Known Issues
 | Issue | Severity | Notes |
 |-------|----------|-------|
 | No audio files yet | Low | Audio loads gracefully fails; needs actual audio files |
 | Visual placeholder | Low | Using rectangles instead of sprites |
+| ~~Checkpoint collision bug~~ | ~~High~~ | **FIXED** - Phaser Containers need explicit setSize() for collision |
 
 ---
 
@@ -341,13 +343,11 @@ Examples:
 > - Run `npm test` to verify changes don't break physics (198 tests)
 > - ObjectPool pre-creates: 100 blocks, 50 spikes, 20 portals, 20 checkpoints, 30 pads, 30 orbs
 > - SaveManager singleton at `saveManager` - don't create new instances
+> - **IMPORTANT**: Phaser Containers need explicit `setSize()` for collision detection - all pooled objects now call this
 >
 > **Key Files Modified This Session**:
-> - `src/services/SaveManager.ts` - New service for localStorage persistence
-> - `src/engine/scenes/GameScene.ts` - Track attempts, deaths, jumps, completions
-> - `src/engine/scenes/SettingsScene.ts` - Persist volume settings
-> - `src/engine/scenes/LevelSelectScene.ts` - Display progress indicators
-> - `tests/unit/services/SaveManager.test.ts` - 33 unit tests
+> - `src/engine/systems/ObjectPool.ts` - Added setSize() to all pooled objects for proper collision detection
+> - `src/engine/scenes/GameScene.ts` - Added defensive checks to checkpoint collision handling
 
 ### Chronicle Index
 See `docs/chronicle/` for session history.

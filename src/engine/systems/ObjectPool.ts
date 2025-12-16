@@ -83,6 +83,9 @@ export class PooledBlock extends Phaser.GameObjects.Container implements Poolabl
     this.highlight = scene.add.rectangle(0, -SIZES.BLOCK / 2 + 2, SIZES.BLOCK - 4, 3, 0xffffff, 0.1);
     this.add(this.highlight);
 
+    // Set container size for collision detection
+    this.setSize(SIZES.BLOCK, SIZES.BLOCK);
+
     this.setDepth(100);
     this.setVisible(false);
     this.setActive(false);
@@ -149,6 +152,9 @@ export class PooledSpike extends Phaser.GameObjects.Container implements Poolabl
 
     // Draw the initial spike shape
     this.redrawSpike();
+
+    // Set container size for collision detection
+    this.setSize(SIZES.SPIKE, SIZES.SPIKE);
 
     this.setDepth(200);
     this.setVisible(false);
@@ -277,6 +283,8 @@ const MODE_COLORS: Record<PlayerModeType, number> = {
  * Poolable portal that can be reused.
  */
 export class PooledPortal extends Phaser.GameObjects.Container implements Poolable {
+  // Use NONE so portals dont interfere with player physics collisions.
+  // Portal triggering is handled separately in GameScene.checkPortalCollisions()
   readonly collisionLayer = CollisionLayer.PORTAL;
 
   type: ObjectTypeType = 'portalMode';
@@ -302,6 +310,11 @@ export class PooledPortal extends Phaser.GameObjects.Container implements Poolab
 
     this.add(this.mainGraphics);
     this.add(this.iconGraphics);
+
+    // Set container size for collision detection (portal is tall and narrow)
+    const portalWidth = SIZES.PLAYER * 0.8;
+    const portalHeight = SIZES.PLAYER * 2.5;
+    this.setSize(portalWidth, portalHeight);
 
     this.setDepth(150);
     this.setVisible(false);
@@ -438,7 +451,9 @@ export interface PooledCheckpointConfig {
  * Displays as a green diamond shape.
  */
 export class PooledCheckpoint extends Phaser.GameObjects.Container implements Poolable {
-  readonly collisionLayer = CollisionLayer.PORTAL; // Non-solid, just triggers
+  // Use NONE so checkpoints dont interfere with player physics collisions.
+  // Checkpoint triggering is handled separately in GameScene.checkCheckpointCollisions()
+  readonly collisionLayer = CollisionLayer.NONE;
 
   type: ObjectTypeType = 'checkpoint';
   checkpointId: number = 0;
@@ -463,6 +478,10 @@ export class PooledCheckpoint extends Phaser.GameObjects.Container implements Po
     this.add(this.mainGraphics);
 
     this.redrawCheckpoint(false);
+
+    // Set container size for collision detection
+    const checkpointSize = SIZES.PLAYER * 0.6;
+    this.setSize(checkpointSize, checkpointSize);
 
     this.setDepth(175);
     this.setVisible(false);
@@ -619,6 +638,9 @@ export class PooledPad extends Phaser.GameObjects.Container implements Poolable 
 
     this.redrawPad();
 
+    // Set container size for collision detection
+    this.setSize(SIZES.BLOCK, SIZES.BLOCK * 0.4);
+
     this.setDepth(150);
     this.setVisible(false);
     this.setActive(false);
@@ -763,6 +785,10 @@ export class PooledOrb extends Phaser.GameObjects.Container implements Poolable 
     this.add(this.coreGraphics);
 
     this.redrawOrb(false);
+
+    // Set container size for collision detection
+    const orbSize = SIZES.PLAYER * 0.8;
+    this.setSize(orbSize, orbSize);
 
     this.setDepth(160);
     this.setVisible(false);

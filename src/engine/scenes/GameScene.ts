@@ -899,6 +899,11 @@ export class GameScene extends Phaser.Scene {
    * Check for checkpoint collisions.
    */
   private checkCheckpointCollisions(): void {
+    // Don't check if player is dead
+    if (this.player.isDead()) {
+      return;
+    }
+
     const playerHitbox = this.player.getHitbox();
     const checkpoints = this.objectPool.getActiveCheckpoints();
 
@@ -935,27 +940,31 @@ export class GameScene extends Phaser.Scene {
    * Handle checkpoint trigger effects.
    */
   private handleCheckpointTrigger(checkpoint: PooledCheckpoint): void {
-    // Get current audio time
-    const audioTime = this.state.audioSyncEnabled
-      ? audioManager.getCurrentTime()
-      : this.state.gameTime;
+    try {
+      // Get current audio time
+      const audioTime = this.state.audioSyncEnabled
+        ? audioManager.getCurrentTime()
+        : this.state.gameTime;
 
-    // Record checkpoint with current player state
-    const checkpointState = checkpointManager.recordCheckpoint(
-      checkpoint.checkpointId,
-      this.player.getPhysicsState(),
-      audioTime,
-      Math.floor((checkpoint as Phaser.GameObjects.Container).x / GRID.UNIT_SIZE),
-      Math.floor((checkpoint as Phaser.GameObjects.Container).y / GRID.UNIT_SIZE)
-    );
+      // Record checkpoint with current player state
+      const checkpointState = checkpointManager.recordCheckpoint(
+        checkpoint.checkpointId,
+        this.player.getPhysicsState(),
+        audioTime,
+        Math.floor((checkpoint as Phaser.GameObjects.Container).x / GRID.UNIT_SIZE),
+        Math.floor((checkpoint as Phaser.GameObjects.Container).y / GRID.UNIT_SIZE)
+      );
 
-    // Show feedback if checkpoint was saved (practice mode)
-    if (checkpointState) {
-      this.showCheckpointFeedback();
+      // Show feedback if checkpoint was saved (practice mode)
+      if (checkpointState) {
+        this.showCheckpointFeedback();
+      }
+
+      // Update UI
+      this.updatePracticeModeUI();
+    } catch (error) {
+      console.error('[GameScene] Error handling checkpoint trigger:', error);
     }
-
-    // Update UI
-    this.updatePracticeModeUI();
   }
 
   /**
