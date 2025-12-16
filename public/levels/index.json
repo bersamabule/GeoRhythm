@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "levels": [
+    {
+      "id": "test-level",
+      "file": "test-level.json",
+      "name": "Test Level",
+      "author": "GeoRhythm",
+      "difficulty": "easy",
+      "duration": 60,
+      "order": 0
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "name": "georhythm",
+  "version": "0.1.0",
+  "description": "A high-fidelity, web-based clone of Geometry Dash",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "generate:types": "json2ts -i specs -o src/generated --cwd specs",
+    "validate:specs": "ajv validate -s \"specs/*.schema.json\" -r \"specs/*.schema.json\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "game",
+    "phaser",
+    "geometry-dash",
+    "rhythm",
+    "platformer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/howler": "^2.2.12",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "ajv-cli": "^5.0.0",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "json-schema-to-typescript": "^13.1.0",
+    "prettier": "^3.1.0",
+    "terser": "^5.44.1",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "phaser": "^3.70.0",
+    "xstate": "^5.4.0"
+  }
+}

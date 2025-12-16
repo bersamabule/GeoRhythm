@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://georhythm.game/schemas/level-manifest.json",
+  "title": "GeoRhythm Level Manifest",
+  "description": "Index of available levels for discovery and selection",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Manifest schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0"
+    },
+    "levels": {
+      "type": "array",
+      "description": "List of available levels",
+      "items": {
+        "$ref": "#/definitions/levelEntry"
+      }
+    }
+  },
+  "required": ["version", "levels"],
+  "definitions": {
+    "levelEntry": {
+      "type": "object",
+      "description": "Metadata for a single level in the manifest",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique level identifier (slug format)",
+          "pattern": "^[a-z0-9-]+$",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "file": {
+          "type": "string",
+          "description": "Filename of the level JSON (relative to levels directory)",
+          "pattern": "^[a-zA-Z0-9-]+\\.json$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "author": {
+          "type": "string",
+          "description": "Level creator",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Difficulty rating",
+          "enum": ["auto", "easy", "normal", "hard", "harder", "insane", "demon"]
+        },
+        "audioFile": {
+          "type": "string",
+          "description": "Path to audio file (relative to public directory)",
+          "pattern": "^assets/audio/[a-zA-Z0-9-]+\\.(mp3|ogg|wav)$"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Level duration in seconds",
+          "minimum": 0
+        },
+        "order": {
+          "type": "integer",
+          "description": "Sort order for level selection menu",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "required": ["id", "file", "name", "author", "difficulty"]
+    }
+  }
+}

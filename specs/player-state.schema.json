@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://georhythm.game/schemas/player-state.json",
+  "title": "Player State",
+  "description": "Complete player state for checkpointing and replays",
+  "type": "object",
+  "properties": {
+    "position": {
+      "type": "object",
+      "description": "Current position in pixels",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "required": ["x", "y"]
+    },
+    "velocity": {
+      "type": "object",
+      "description": "Current velocity in pixels/second",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "required": ["x", "y"]
+    },
+    "mode": {
+      "type": "string",
+      "description": "Current player mode",
+      "enum": ["cube", "ship", "ball"]
+    },
+    "speed": {
+      "type": "string",
+      "description": "Current movement speed",
+      "enum": ["slow", "normal", "fast", "faster", "superFast"]
+    },
+    "gravityInverted": {
+      "type": "boolean",
+      "description": "Whether gravity is flipped"
+    },
+    "rotation": {
+      "type": "number",
+      "description": "Visual rotation in degrees"
+    },
+    "isGrounded": {
+      "type": "boolean",
+      "description": "Whether player is on ground"
+    },
+    "isDead": {
+      "type": "boolean",
+      "description": "Whether player is in death state"
+    },
+    "audioTime": {
+      "type": "number",
+      "description": "Audio position in seconds at this state"
+    },
+    "checkpointId": {
+      "type": "integer",
+      "description": "ID of last checkpoint reached (practice mode)"
+    }
+  },
+  "required": ["position", "velocity", "mode", "speed", "gravityInverted"]
+}

@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://georhythm.game/schemas/save-data.json",
+  "title": "Save Data",
+  "description": "Persistent player progress, settings, and unlocks",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Save format version for migration",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "player": {
+      "type": "object",
+      "description": "Player customization",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Player display name",
+          "maxLength": 20
+        },
+        "iconId": {
+          "type": "integer",
+          "description": "Selected icon ID",
+          "default": 1
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary color (hex)",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#00FF00"
+        },
+        "secondaryColor": {
+          "type": "string",
+          "description": "Secondary/glow color (hex)",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#00FFFF"
+        },
+        "trailEnabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "description": "Game progress tracking",
+      "properties": {
+        "levels": {
+          "type": "object",
+          "description": "Per-level progress (keyed by level ID)",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "completed": {
+                "type": "boolean",
+                "description": "Level completed at least once"
+              },
+              "bestProgress": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Best completion percentage"
+              },
+              "attempts": {
+                "type": "integer",
+                "description": "Total attempts on this level"
+              },
+              "practiceCheckpoints": {
+                "type": "array",
+                "items": { "type": "number" },
+                "description": "Saved checkpoint positions (X coordinates)"
+              },
+              "stars": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3,
+                "description": "Stars earned (0-3)"
+              },
+              "coins": {
+                "type": "array",
+                "items": { "type": "integer" },
+                "description": "IDs of collected coins"
+              },
+              "bestTime": {
+                "type": "number",
+                "description": "Best completion time in seconds"
+              },
+              "firstCompleted": {
+                "type": "string",
+                "format": "date-time",
+                "description": "First completion timestamp"
+              }
+            }
+          }
+        },
+        "totalStars": {
+          "type": "integer",
+          "description": "Total stars earned across all levels"
+        },
+        "totalCoins": {
+          "type": "integer",
+          "description": "Total coins collected"
+        },
+        "totalAttempts": {
+          "type": "integer",
+          "description": "Total attempts across all levels"
+        },
+        "totalDeaths": {
+          "type": "integer",
+          "description": "Total death count"
+        },
+        "totalJumps": {
+          "type": "integer",
+          "description": "Total jump count"
+        },
+        "playTime": {
+          "type": "number",
+          "description": "Total play time in seconds"
+        },
+        "levelsCompleted": {
+          "type": "integer",
+          "description": "Number of levels completed"
+        }
+      }
+    },
+    "unlocks": {
+      "type": "object",
+      "description": "Unlocked customization options",
+      "properties": {
+        "icons": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Unlocked icon IDs",
+          "default": [1]
+        },
+        "colors": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "description": "Unlocked colors",
+          "default": ["#00FF00", "#00FFFF", "#FF0000", "#FFFF00", "#FF00FF"]
+        },
+        "trails": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Unlocked trail effect IDs",
+          "default": [1]
+        },
+        "deathEffects": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Unlocked death effect IDs",
+          "default": [1]
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "User preferences",
+      "properties": {
+        "musicVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8
+        },
+        "sfxVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1
+        },
+        "showFPS": {
+          "type": "boolean",
+          "default": false
+        },
+        "showProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show progress bar during gameplay"
+        },
+        "showAttempts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show attempt counter"
+        },
+        "autoRetry": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-restart on death"
+        },
+        "autoCheckpoints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-place checkpoints in practice mode"
+        },
+        "screenShake": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable screen shake effects"
+        },
+        "particleEffects": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable particle effects"
+        },
+        "lowDetail": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reduce visual effects for performance"
+        }
+      }
+    },
+    "achievements": {
+      "type": "array",
+      "description": "Earned achievement IDs",
+      "items": { "type": "string" }
+    },
+    "lastPlayed": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last session timestamp"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Save file creation timestamp"
+    }
+  },
+  "required": ["version", "progress"]
+}

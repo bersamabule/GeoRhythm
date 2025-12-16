@@ -1,0 +1,247 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://georhythm.game/schemas/level-format.json",
+  "title": "GeoRhythm Level Format",
+  "description": "Complete level definition including metadata, settings, and objects",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version for forward compatibility",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Level information for display and indexing",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique level identifier (UUID)",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "author": {
+          "type": "string",
+          "description": "Creator's display name",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional level description",
+          "maxLength": 200
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Difficulty rating",
+          "enum": ["auto", "easy", "normal", "hard", "harder", "insane", "demon"]
+        },
+        "songId": {
+          "type": "integer",
+          "description": "Reference to audio track",
+          "minimum": 1
+        },
+        "songName": {
+          "type": "string",
+          "description": "Display name of the song"
+        },
+        "songArtist": {
+          "type": "string",
+          "description": "Song artist name"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Level duration in seconds"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["name", "author", "songId"]
+    },
+    "settings": {
+      "type": "object",
+      "description": "Level configuration and appearance",
+      "properties": {
+        "backgroundColor": {
+          "type": "string",
+          "description": "Background color (hex)",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#0066FF"
+        },
+        "groundColor": {
+          "type": "string",
+          "description": "Ground/platform tint color",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#0044AA"
+        },
+        "lineColor": {
+          "type": "string",
+          "description": "Grid line color",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#0055CC"
+        },
+        "startMode": {
+          "type": "string",
+          "description": "Initial player mode",
+          "enum": ["cube", "ship", "ball"],
+          "default": "cube"
+        },
+        "startSpeed": {
+          "type": "string",
+          "description": "Initial movement speed",
+          "enum": ["slow", "normal", "fast", "faster", "superFast"],
+          "default": "normal"
+        },
+        "startGravity": {
+          "type": "string",
+          "description": "Initial gravity direction",
+          "enum": ["normal", "inverted"],
+          "default": "normal"
+        },
+        "groundY": {
+          "type": "integer",
+          "description": "Ground level in grid units",
+          "minimum": 0,
+          "maximum": 14,
+          "default": 12
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "description": "All level objects (obstacles, decorations, triggers)",
+      "items": {
+        "$ref": "#/definitions/levelObject"
+      }
+    },
+    "colors": {
+      "type": "array",
+      "description": "Color triggers for background transitions",
+      "items": {
+        "$ref": "#/definitions/colorTrigger"
+      }
+    }
+  },
+  "required": ["version", "metadata", "objects"],
+  "definitions": {
+    "levelObject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Object instance ID (unique within level)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Object type identifier",
+          "enum": [
+            "block",
+            "spike",
+            "spikeInverted",
+            "padYellow",
+            "padPink",
+            "orbYellow",
+            "orbBlue",
+            "portalGravity",
+            "portalMode",
+            "portalSpeed",
+            "checkpoint",
+            "decoration"
+          ]
+        },
+        "x": {
+          "type": "number",
+          "description": "Grid X position"
+        },
+        "y": {
+          "type": "number",
+          "description": "Grid Y position"
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Rotation in degrees",
+          "enum": [0, 90, 180, 270],
+          "default": 0
+        },
+        "scale": {
+          "type": "number",
+          "description": "Visual scale multiplier",
+          "minimum": 0.1,
+          "maximum": 2.0,
+          "default": 1.0
+        },
+        "flipX": {
+          "type": "boolean",
+          "default": false
+        },
+        "flipY": {
+          "type": "boolean",
+          "default": false
+        },
+        "zIndex": {
+          "type": "integer",
+          "description": "Render order (higher = front)",
+          "default": 0
+        },
+        "properties": {
+          "type": "object",
+          "description": "Type-specific properties",
+          "properties": {
+            "targetMode": {
+              "type": "string",
+              "enum": ["cube", "ship", "ball"]
+            },
+            "targetSpeed": {
+              "type": "string",
+              "enum": ["slow", "normal", "fast", "faster", "superFast"]
+            },
+            "groupId": {
+              "type": "integer",
+              "description": "Animation/trigger group"
+            },
+            "invisible": {
+              "type": "boolean",
+              "description": "Hidden until triggered"
+            }
+          }
+        }
+      },
+      "required": ["type", "x", "y"]
+    },
+    "colorTrigger": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Trigger position (grid X)"
+        },
+        "target": {
+          "type": "string",
+          "enum": ["background", "ground", "line"]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Transition duration in seconds",
+          "default": 0.5
+        }
+      },
+      "required": ["x", "target", "color"]
+    }
+  }
+}

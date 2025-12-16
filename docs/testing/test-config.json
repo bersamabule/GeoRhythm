@@ -1,0 +1,82 @@
+{
+  "$schema": "./test-config-schema.json",
+  "_comment": "This file configures Claude's Autonomous Test and Check capability",
+
+  "detection": {
+    "_comment": "Claude will auto-detect these if not specified",
+    "language": null,
+    "framework": null,
+    "packageManager": null
+  },
+
+  "commands": {
+    "test": "[AUTO_DETECT]",
+    "testSingle": "[AUTO_DETECT]",
+    "testWatch": "[AUTO_DETECT]",
+    "coverage": "[AUTO_DETECT]",
+    "lint": "[AUTO_DETECT]",
+    "lintFix": "[AUTO_DETECT]",
+    "typeCheck": "[AUTO_DETECT]",
+    "format": "[AUTO_DETECT]",
+    "formatCheck": "[AUTO_DETECT]",
+    "build": "[AUTO_DETECT]",
+    "securityScan": "[AUTO_DETECT]"
+  },
+
+  "thresholds": {
+    "coverageMinimum": 70,
+    "coverageTarget": 80,
+    "coverageCriticalPath": 90,
+    "maxComplexity": 10,
+    "maxFileLength": 500,
+    "maxFunctionLength": 50
+  },
+
+  "verification": {
+    "phases": {
+      "immediate": {
+        "enabled": true,
+        "checks": ["syntax", "imports", "types"]
+      },
+      "preDelivery": {
+        "enabled": true,
+        "checks": ["lint", "typeCheck", "unitTests", "security", "debugStatements"]
+      },
+      "integration": {
+        "enabled": true,
+        "triggerOn": ["multipleFiles", "apiChanges", "schemaChanges"],
+        "checks": ["allTests", "coverage", "regression"]
+      },
+      "smoke": {
+        "enabled": true,
+        "triggerOn": ["buildChanges", "configChanges"],
+        "checks": ["build", "startup", "healthCheck"]
+      }
+    }
+  },
+
+  "testGeneration": {
+    "enabled": true,
+    "style": "arrange-act-assert",
+    "includeEdgeCases": true,
+    "includeErrorCases": true,
+    "mockExternalDependencies": true
+  },
+
+  "ignore": {
+    "files": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.git/**",
+      "**/coverage/**"
+    ],
+    "checks": []
+  },
+
+  "reporting": {
+    "saveReports": false,
+    "reportPath": "docs/testing/reports",
+    "verbosity": "normal"
+  }
+}

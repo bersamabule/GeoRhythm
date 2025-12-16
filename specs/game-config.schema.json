@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://georhythm.game/schemas/game-config.json",
+  "title": "Game Configuration",
+  "description": "Runtime game settings and physics constants",
+  "type": "object",
+  "properties": {
+    "display": {
+      "type": "object",
+      "description": "Display settings",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "default": 800,
+          "description": "Canvas width in pixels"
+        },
+        "height": {
+          "type": "integer",
+          "default": 600,
+          "description": "Canvas height in pixels"
+        },
+        "targetFPS": {
+          "type": "integer",
+          "default": 60,
+          "description": "Target frame rate"
+        },
+        "pixelArt": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable pixel art rendering (nearest neighbor)"
+        },
+        "antialias": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable antialiasing"
+        }
+      }
+    },
+    "physics": {
+      "type": "object",
+      "description": "Physics constants",
+      "properties": {
+        "gravity": {
+          "type": "number",
+          "default": 2600,
+          "description": "Gravity acceleration in pixels/sec²"
+        },
+        "jumpForce": {
+          "type": "number",
+          "default": 800,
+          "description": "Jump impulse velocity in pixels/sec"
+        },
+        "terminalVelocity": {
+          "type": "number",
+          "default": 1200,
+          "description": "Maximum fall speed in pixels/sec"
+        },
+        "coyoteTime": {
+          "type": "number",
+          "default": 0.08,
+          "description": "Grace period after leaving platform (seconds)"
+        },
+        "jumpBuffer": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Pre-landing jump buffer window (seconds)"
+        },
+        "shipGravityMultiplier": {
+          "type": "number",
+          "default": 0.4,
+          "description": "Ship mode gravity relative to cube"
+        },
+        "shipThrustForce": {
+          "type": "number",
+          "default": 600,
+          "description": "Ship upward thrust in pixels/sec²"
+        }
+      }
+    },
+    "speeds": {
+      "type": "object",
+      "description": "Movement speeds in pixels/second",
+      "properties": {
+        "slow": { "type": "number", "default": 251.16 },
+        "normal": { "type": "number", "default": 311.58 },
+        "fast": { "type": "number", "default": 387.42 },
+        "faster": { "type": "number", "default": 468.0 },
+        "superFast": { "type": "number", "default": 576.0 }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "description": "Camera behavior settings",
+      "properties": {
+        "lookAheadX": {
+          "type": "number",
+          "default": 200,
+          "description": "Pixels ahead of player to center camera"
+        },
+        "smoothingY": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Y-axis follow smoothing (0-1)"
+        },
+        "deadZoneY": {
+          "type": "number",
+          "default": 50,
+          "description": "Y movement threshold before camera follows"
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "description": "Audio settings",
+      "properties": {
+        "masterVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "Master volume multiplier"
+        },
+        "musicVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8,
+          "description": "Music volume multiplier"
+        },
+        "sfxVolume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "Sound effects volume multiplier"
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "description": "Level grid settings",
+      "properties": {
+        "unitSize": {
+          "type": "integer",
+          "default": 40,
+          "description": "Grid unit size in pixels"
+        },
+        "visibleHeight": {
+          "type": "integer",
+          "default": 15,
+          "description": "Visible grid height in units"
+        },
+        "defaultGroundY": {
+          "type": "integer",
+          "default": 12,
+          "description": "Default ground level in grid units"
+        }
+      }
+    },
+    "hitboxes": {
+      "type": "object",
+      "description": "Collision hitbox sizes (relative to visual size)",
+      "properties": {
+        "playerCube": {
+          "type": "number",
+          "default": 0.9,
+          "description": "Player cube hitbox scale (forgiving)"
+        },
+        "playerShip": {
+          "type": "number",
+          "default": 0.85,
+          "description": "Player ship hitbox scale"
+        },
+        "spike": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Spike hitbox scale (very forgiving)"
+        },
+        "orb": {
+          "type": "number",
+          "default": 0.75,
+          "description": "Orb trigger zone scale"
+        }
+      }
+    }
+  }
+}

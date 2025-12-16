@@ -1,0 +1,104 @@
+{
+  "$schema": "./config-schema.json",
+  "_comment": "Configuration for Claude's Dependency Doctor capability",
+
+  "scanning": {
+    "onSessionStart": true,
+    "frequency": "session",
+    "includeDevDependencies": true,
+    "includeTransitive": true
+  },
+
+  "detection": {
+    "_comment": "Auto-detected from project files",
+    "packageManager": null,
+    "lockFile": null
+  },
+
+  "thresholds": {
+    "security": {
+      "failBuild": "high",
+      "warnAt": "moderate",
+      "blockMerge": "critical"
+    },
+    "freshness": {
+      "majorVersionMaxAge": 365,
+      "minorVersionMaxAge": 180,
+      "patchVersionMaxAge": 30
+    }
+  },
+
+  "reporting": {
+    "format": "markdown",
+    "includeCVELinks": true,
+    "includeUpgradeCommands": true,
+    "groupBySeverity": true
+  },
+
+  "automation": {
+    "autoFix": {
+      "enabled": false,
+      "maxSeverity": "moderate",
+      "requireTests": true
+    },
+    "createPRs": false,
+    "updateLockFile": true
+  },
+
+  "ignore": {
+    "packages": [],
+    "advisories": [],
+    "paths": [
+      "**/node_modules/**",
+      "**/venv/**",
+      "**/.venv/**"
+    ]
+  },
+
+  "notifications": {
+    "onCritical": true,
+    "onHigh": true,
+    "onNewVulnerability": true
+  },
+
+  "ecosystems": {
+    "javascript": {
+      "commands": {
+        "audit": "npm audit --json",
+        "auditFix": "npm audit fix",
+        "outdated": "npm outdated --json",
+        "update": "npm update",
+        "install": "npm install"
+      },
+      "files": ["package.json", "package-lock.json", "yarn.lock"]
+    },
+    "python": {
+      "commands": {
+        "audit": "pip-audit --format=json",
+        "auditFix": "pip-audit --fix",
+        "outdated": "pip list --outdated --format=json",
+        "update": "pip install --upgrade",
+        "install": "pip install -r requirements.txt"
+      },
+      "files": ["requirements.txt", "pyproject.toml", "Pipfile.lock", "poetry.lock"]
+    },
+    "rust": {
+      "commands": {
+        "audit": "cargo audit --json",
+        "outdated": "cargo outdated --format json",
+        "update": "cargo update",
+        "install": "cargo build"
+      },
+      "files": ["Cargo.toml", "Cargo.lock"]
+    },
+    "go": {
+      "commands": {
+        "audit": "govulncheck -json ./...",
+        "outdated": "go list -m -u -json all",
+        "update": "go get -u",
+        "install": "go mod download"
+      },
+      "files": ["go.mod", "go.sum"]
+    }
+  }
+}
