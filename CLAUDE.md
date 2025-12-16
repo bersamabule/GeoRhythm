@@ -9,9 +9,9 @@
 ## Project Overview
 
 **Project Name**: GeoRhythm
-**Repository**: Local (C:\GeoRhythm)
+**Repository**: https://github.com/bersamabule/GeoRhythm
 **Primary Language**: TypeScript
-**Last Updated**: 2025-12-15
+**Last Updated**: 2025-12-16
 
 ### Description
 A high-fidelity, web-based clone of Geometry Dash - a rhythm-based platformer where players control a cube (and other shapes) that automatically moves forward while the player's only input is jumping. Obstacles are synchronized to music, and one hit means death and restart.
@@ -339,6 +339,7 @@ See `docs/chronicle/` for session history.
 - `/inspect` - Capture app context
 - `/verify` - Run verification suite
 - `/test` - Run tests
+- `/test-agent` - **Run tests via sub-agent (saves tokens!)**
 - `/deps` - Dependency health
 - `/review` - Code review
 - `/spec-scan` - Find specs
@@ -349,6 +350,33 @@ See `docs/chronicle/` for session history.
 - `/context-status` - Check context window usage
 - `/context-guardian` - Create comprehensive session handoff
 - `/emergency-handoff` - Emergency minimal handoff
+
+---
+
+## Token Management Best Practices
+
+### Use Sub-Agents for Heavy Tasks
+To prevent "prompt is too long" errors, offload these to sub-agents:
+- **Testing**: Use `/test-agent` instead of running tests in main session
+- **Exploration**: Use Task tool with `subagent_type: "Explore"` for codebase searches
+- **Code review**: Offload to sub-agent for large diffs
+
+### Keep Context Lean
+- Use `/context-status` to monitor usage (aim for <70%)
+- Run `/context-guardian` at 70-80% to create handoff
+- Use `/emergency-handoff` at 90%+ (critical)
+- Commit frequently to GitHub so progress is saved
+
+### Session Discipline
+1. **Start**: Read CLAUDE.md, check last chronicle entry
+2. **During**: Use sub-agents for tests, commit after milestones
+3. **At 70%**: Create handoff document
+4. **End**: Update CLAUDE.md, commit, push to GitHub
+
+### GitHub Integration
+- **Repository**: https://github.com/bersamabule/GeoRhythm
+- **Commit often**: Save progress in case of context exhaustion
+- **Branch strategy**: `main` for stable, `feature/*` for work-in-progress
 
 ---
 
