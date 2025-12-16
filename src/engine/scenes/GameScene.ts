@@ -19,6 +19,7 @@ import {
 import type { PlayerModeType, SpeedModeType } from '@generated/index';
 
 import { Player } from '../objects';
+import { SCENE_KEYS } from './MainMenuScene';
 import {
   Background,
   ParticleManager,
@@ -660,9 +661,12 @@ export class GameScene extends Phaser.Scene {
     completeText.setOrigin(0.5);
     completeText.setDepth(2000);
 
-    // Stop the game after a delay
+    // Return to Level Select after a delay
     this.time.delayedCall(2000, () => {
-      this.restart();
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.time.delayedCall(300, () => {
+        this.scene.start(SCENE_KEYS.LEVEL_SELECT);
+      });
     });
   }
 

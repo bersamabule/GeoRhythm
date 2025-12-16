@@ -9,6 +9,15 @@
       "difficulty": "easy",
       "duration": 60,
       "order": 0
+    },
+    {
+      "id": "stereo-madness",
+      "file": "stereo-madness.json",
+      "name": "Stereo Madness",
+      "author": "RobTop",
+      "difficulty": "easy",
+      "duration": 87,
+      "order": 1
     }
   ]
 }
