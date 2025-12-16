@@ -27,5 +27,8 @@ export type {
   CheckpointEvents,
 } from './CheckpointManager';
 
+export { SaveManager, saveManager } from './SaveManager';
+export type { LevelProgress, GameStats, GameSettings } from './SaveManager';
+
 // Re-export LevelEntry from generated for convenience
 export type { LevelEntry } from '@generated/index';

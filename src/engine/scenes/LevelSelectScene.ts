@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 
 import { gameConfig } from '@config/game.config';
-import { levelLoader, type LevelEntry } from '@services/index';
+import { levelLoader, saveManager, type LevelEntry } from '@services/index';
 
 import { SCENE_KEYS } from './MainMenuScene';
 
@@ -295,7 +295,57 @@ export class LevelSelectScene extends Phaser.Scene {
     });
     durationText.setOrigin(0.5);
 
-    container.add([bg, badge, numberText, nameText, authorText, difficultyText, durationText]);
+    // Get saved progress for this level
+    const progress = saveManager.getLevelProgress(level.id);
+    const progressElements: Phaser.GameObjects.GameObject[] = [];
+
+    // Show completion checkmark if completed
+    if (progress.completed) {
+      const checkmark = this.add.text(
+        CARD_CONFIG.width / 2 - 25,
+        -CARD_CONFIG.height / 2 + 25,
+        '✓',
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '24px',
+          color: '#00ff00',
+        }
+      );
+      checkmark.setOrigin(0.5);
+      progressElements.push(checkmark);
+    } else if (progress.bestProgress > 0) {
+      // Show best progress percentage if not completed but attempted
+      const progressText = this.add.text(
+        CARD_CONFIG.width / 2 - 25,
+        -CARD_CONFIG.height / 2 + 25,
+        `${progress.bestProgress}%`,
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          color: '#ffaa00',
+        }
+      );
+      progressText.setOrigin(0.5);
+      progressElements.push(progressText);
+    }
+
+    // Show attempt count if any attempts made
+    if (progress.attempts > 0) {
+      const attemptText = this.add.text(
+        CARD_CONFIG.width / 2 - 15,
+        CARD_CONFIG.height / 2 - 15,
+        `${progress.attempts} attempts`,
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '10px',
+          color: '#666666',
+        }
+      );
+      attemptText.setOrigin(1, 1);
+      progressElements.push(attemptText);
+    }
+
+    container.add([bg, badge, numberText, nameText, authorText, difficultyText, durationText, ...progressElements]);
 
     // Make interactive
     const hitArea = new Phaser.Geom.Rectangle(

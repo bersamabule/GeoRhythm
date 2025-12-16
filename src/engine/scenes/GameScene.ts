@@ -12,6 +12,7 @@ import {
   levelLoader,
   audioManager,
   checkpointManager,
+  saveManager,
   type ParsedLevel,
   type ParsedLevelObject,
 } from '@services/index';
@@ -109,6 +110,16 @@ export class GameScene extends Phaser.Scene {
 
   init(data?: GameSceneData): void {
     this.requestedLevelId = data?.levelId ?? null;
+
+    // Load saved progress for this level
+    const levelId = this.requestedLevelId ?? 'test-level';
+    const savedProgress = saveManager.getLevelProgress(levelId);
+
+    // Start at saved attempt count + 1 (this is a new attempt)
+    this.state.attempt = (savedProgress.attempts ?? 0) + 1;
+
+    // Record this attempt
+    saveManager.recordAttempt(levelId);
   }
 
   create(): void {
@@ -534,6 +545,13 @@ export class GameScene extends Phaser.Scene {
    * Called when the player dies.
    */
   private onPlayerDeath(x: number, y: number): void {
+    // Record death and best progress to save
+    const levelId = this.requestedLevelId ?? 'test-level';
+    const progress = this.player.getProgress(this.levelLength);
+    saveManager.recordDeath(levelId);
+    saveManager.updateProgress(levelId, progress);
+    saveManager.save(); // Force save on death
+
     // Play death sound effect
     audioManager.playDeath();
 
@@ -619,6 +637,9 @@ export class GameScene extends Phaser.Scene {
    * Called when the player jumps.
    */
   private onPlayerJump(x: number, y: number): void {
+    // Track jump for statistics
+    saveManager.recordJump();
+
     // Play jump sound effect
     audioManager.playJump();
 
@@ -637,6 +658,11 @@ export class GameScene extends Phaser.Scene {
    */
   private onLevelComplete(): void {
     this.state.isComplete = true;
+
+    // Record completion to save
+    const levelId = this.requestedLevelId ?? 'test-level';
+    const completionTime = this.state.gameTime;
+    saveManager.recordCompletion(levelId, completionTime);
 
     // Play completion sound
     audioManager.playComplete();
@@ -679,6 +705,10 @@ export class GameScene extends Phaser.Scene {
     this.state.gameTime = 0;
     this.state.startTime = this.time.now;
     this.trailTimer = 0;
+
+    // Record new attempt to save
+    const levelId = this.requestedLevelId ?? 'test-level';
+    saveManager.recordAttempt(levelId);
 
     this.player.reset();
     this.cameras.main.scrollX = 0;

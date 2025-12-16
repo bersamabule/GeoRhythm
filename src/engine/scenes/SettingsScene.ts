@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 
 import { gameConfig } from '@config/game.config';
-import { audioManager } from '@services/index';
+import { audioManager, saveManager } from '@services/index';
 
 import { SCENE_KEYS } from './MainMenuScene';
 
@@ -36,9 +36,14 @@ export class SettingsScene extends Phaser.Scene {
   create(): void {
     this.centerX = gameConfig.display.width / 2;
 
-    // Load current volumes from audio manager
-    this.musicVolume = audioManager.getMusicVolume();
-    this.sfxVolume = audioManager.getSfxVolume();
+    // Load saved settings (then apply to audio manager)
+    const savedSettings = saveManager.getSettings();
+    this.musicVolume = savedSettings.musicVolume;
+    this.sfxVolume = savedSettings.sfxVolume;
+
+    // Apply saved settings to audio manager
+    audioManager.setMusicVolume(this.musicVolume);
+    audioManager.setSfxVolume(this.sfxVolume);
 
     this.createBackground();
     this.createHeader();
@@ -143,6 +148,7 @@ export class SettingsScene extends Phaser.Scene {
       onChange: (value) => {
         this.musicVolume = value;
         audioManager.setMusicVolume(value);
+        saveManager.setMusicVolume(value);
       },
     });
 
@@ -157,6 +163,7 @@ export class SettingsScene extends Phaser.Scene {
       onChange: (value) => {
         this.sfxVolume = value;
         audioManager.setSfxVolume(value);
+        saveManager.setSfxVolume(value);
       },
     });
 
@@ -358,6 +365,9 @@ export class SettingsScene extends Phaser.Scene {
 
     audioManager.setMusicVolume(this.musicVolume);
     audioManager.setSfxVolume(this.sfxVolume);
+
+    // Reset saved settings to defaults
+    saveManager.resetSettings();
 
     // Recreate the scene to refresh sliders
     this.scene.restart();
