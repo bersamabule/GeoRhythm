@@ -19,3 +19,10 @@ export type {
 
 export { AudioManager, audioManager } from './AudioManager';
 export type { AudioConfig, SongConfig, AudioState } from './AudioManager';
+
+export { CheckpointManager, checkpointManager } from './CheckpointManager';
+export type {
+  CheckpointState,
+  CheckpointDefinition,
+  CheckpointEvents,
+} from './CheckpointManager';

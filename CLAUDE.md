@@ -213,7 +213,7 @@ Examples:
 - [x] Phase 4: BallMode physics (gravity flip)
 - [x] Phase 4: Mode portals (mode, gravity, speed)
 - [x] Phase 4: Portal pooling and collision detection
-- [ ] Phase 4: Practice mode with checkpoints
+- [x] Phase 3: Practice mode with checkpoints - 165 tests passing
 
 ### Recent Changes
 | Date | Change | Chronicle Entry |
@@ -226,6 +226,7 @@ Examples:
 | 2025-12-16 | AudioManager with Howler.js integration | - |
 | 2025-12-16 | ShipMode & BallMode physics implemented | - |
 | 2025-12-16 | Portal system (mode/gravity/speed) | - |
+| 2025-12-16 | Practice mode with checkpoints | - |
 
 ### Known Issues
 | Issue | Severity | Notes |
@@ -260,7 +261,7 @@ Examples:
 |-------|------|--------|
 | 1 | Grey Box Engine (cube + collisions) | **Complete** |
 | 2 | Level Loader (JSON parsing, pooling) | **Complete** |
-| 3 | Polish (audio, death, practice mode) | **In Progress** |
+| 3 | Polish (audio, death, practice mode) | **Complete** |
 | 4 | Game Modes (ship, ball, portals) | **Complete** |
 | 5 | UI & Menus | Not Started |
 | 6 | Persistence (saves, progress) | Not Started |
@@ -271,7 +272,7 @@ Examples:
 ## Session Continuity
 
 ### For Next Session
-> **Where I left off**: Phase 4 Game Modes is complete! All three physics modes (cube, ship, ball) implemented with mode portal transitions. 138 tests passing.
+> **Where I left off**: Phase 3 (Practice Mode) is complete! Checkpoints with respawn functionality implemented. 165 tests passing.
 >
 > **What's working**:
 > - Phaser + TypeScript + Vite project setup
@@ -282,19 +283,25 @@ Examples:
 >   - **BallMode**: gravity flip on tap (rolls on floor/ceiling)
 > - AABB collision detection with proper resolution
 > - **LevelLoader service** with manifest support (`getManifest()`, `loadLevel(id)`)
-> - **ObjectPool system** for efficient sprite recycling (`acquireBlock`, `acquireSpike`, `acquirePortal`, `releaseAll`)
+> - **ObjectPool system** for efficient sprite recycling (`acquireBlock`, `acquireSpike`, `acquirePortal`, `acquireCheckpoint`, `releaseAll`)
 > - **Portal system**: mode portals, gravity portals, speed portals
+> - **Practice Mode with Checkpoints**:
+>   - Press 'P' to toggle practice mode
+>   - Green diamond checkpoints save player state (position, mode, speed, gravity)
+>   - On death in practice mode: respawn at last checkpoint
+>   - Audio seeks to checkpoint time on respawn
+>   - Visual feedback for checkpoint triggers
 > - **AudioManager** with Howler.js for music-first game loop
-> - Test level JSON file with mode portal demo at `public/levels/test-level.json`
+> - Test level JSON file with checkpoints at `public/levels/test-level.json`
 > - Player visual updates when changing modes (cube/ship/ball icons)
 > - Progress bar and attempt counter
 > - Pause menu with Escape (pauses audio)
 > - Death effects: screen flash, camera shake, particles
 >
-> **Next steps** (Phase 3 remaining / Phase 5):
-> 1. Practice mode with checkpoints
-> 2. Jump pads and jump orbs (interactive objects)
-> 3. UI & Menus
+> **Next steps** (Phase 5):
+> 1. Jump pads and jump orbs (interactive objects)
+> 2. UI & Menus (main menu, level select)
+> 3. Persistence (saves, progress)
 >
 > **Watch out for**:
 > - Physics code is in `src/core/physics/modes/` - keep it framework-agnostic

@@ -350,6 +350,49 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Respawn at a checkpoint position with saved state.
+   */
+  respawnAtCheckpoint(
+    x: number,
+    y: number,
+    mode: import('@generated/index').PlayerModeType,
+    speed: import('@generated/index').SpeedModeType,
+    gravityInverted: boolean
+  ): void {
+    this.physicsState = createDefaultPhysicsState({
+      position: { x, y },
+      isGrounded: true,
+      mode,
+      speed,
+      gravityInverted,
+    });
+
+    this._audioTime = 0;
+    this.wasGroundedLastFrame = true;
+    this.wasInAir = false;
+
+    // Set the mode properly
+    this.setMode(mode);
+    this.setSpeed(speed);
+
+    if (gravityInverted !== this.physicsState.gravityInverted) {
+      this.flipGravity();
+    }
+
+    // Show player again
+    this.cubeBody.setVisible(true);
+    this.cubeIcon.setVisible(true);
+    this.glowEffect.setVisible(true);
+
+    // Reset color
+    this.cubeBody.setFillStyle(this.config.primaryColor);
+    this.cubeBody.setStrokeStyle(2, this.darkenColor(this.config.primaryColor, 0.3));
+    this.drawCubeIcon();
+
+    this.syncVisuals();
+  }
+
+  /**
    * Set player colors.
    */
   setColors(primary: number, secondary: number): void {

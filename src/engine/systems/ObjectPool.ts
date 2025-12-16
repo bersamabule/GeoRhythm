@@ -425,6 +425,153 @@ export class PooledPortal extends Phaser.GameObjects.Container implements Poolab
 }
 
 // =============================================================================
+// Pooled Checkpoint
+// =============================================================================
+
+export interface PooledCheckpointConfig {
+  checkpointId?: number;
+  name?: string;
+}
+
+/**
+ * Poolable checkpoint for practice mode.
+ * Displays as a green diamond shape.
+ */
+export class PooledCheckpoint extends Phaser.GameObjects.Container implements Poolable {
+  readonly collisionLayer = CollisionLayer.PORTAL; // Non-solid, just triggers
+
+  type: ObjectTypeType = 'checkpoint';
+  checkpointId: number = 0;
+  checkpointName: string = '';
+
+  private _active: boolean = false;
+  private _triggered: boolean = false;
+
+  private mainGraphics: Phaser.GameObjects.Graphics;
+  private glowGraphics: Phaser.GameObjects.Graphics;
+
+  constructor(scene: Phaser.Scene, config: PooledCheckpointConfig = {}) {
+    super(scene, 0, 0);
+
+    this.checkpointId = config.checkpointId ?? 0;
+    this.checkpointName = config.name ?? '';
+
+    this.mainGraphics = scene.add.graphics();
+    this.glowGraphics = scene.add.graphics();
+
+    this.add(this.glowGraphics);
+    this.add(this.mainGraphics);
+
+    this.redrawCheckpoint(false);
+
+    this.setDepth(175);
+    this.setVisible(false);
+    this.setActive(false);
+
+    scene.add.existing(this);
+  }
+
+  activate(gridX: number, gridY: number, checkpointId: number, name: string = ''): void {
+    const pixelX = gridX * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+    const pixelY = gridY * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+
+    this.checkpointId = checkpointId;
+    this.checkpointName = name;
+    this._triggered = false;
+
+    this.redrawCheckpoint(false);
+
+    this.setPosition(pixelX, pixelY);
+    this.setVisible(true);
+    this.setActive(true);
+    this._active = true;
+  }
+
+  deactivate(): void {
+    this.setVisible(false);
+    this.setActive(false);
+    this._active = false;
+    this._triggered = false;
+  }
+
+  isActive(): boolean {
+    return this._active;
+  }
+
+  shouldTrigger(): boolean {
+    return !this._triggered;
+  }
+
+  trigger(): void {
+    this._triggered = true;
+    // Redraw with triggered state (bright green)
+    this.redrawCheckpoint(true);
+  }
+
+  resetTrigger(): void {
+    this._triggered = false;
+    this.redrawCheckpoint(false);
+  }
+
+  isTriggered(): boolean {
+    return this._triggered;
+  }
+
+  private redrawCheckpoint(triggered: boolean): void {
+    this.mainGraphics.clear();
+    this.glowGraphics.clear();
+
+    const size = SIZES.PLAYER * 0.6;
+    const halfSize = size / 2;
+
+    // Colors change based on triggered state
+    const primaryColor = triggered ? 0x00ff00 : 0x00aa00;
+    const secondaryColor = triggered ? 0x88ff88 : 0x006600;
+    const glowColor = 0x00ff00;
+    const glowAlpha = triggered ? 0.5 : 0.2;
+
+    // Outer glow (pulsing effect handled by scene if needed)
+    this.glowGraphics.fillStyle(glowColor, glowAlpha);
+    this.glowGraphics.fillCircle(0, 0, size * 0.8);
+
+    // Diamond shape (rotated square)
+    this.mainGraphics.fillStyle(secondaryColor, 1);
+    this.mainGraphics.fillTriangle(0, -halfSize, halfSize, 0, 0, halfSize);
+    this.mainGraphics.fillTriangle(0, -halfSize, -halfSize, 0, 0, halfSize);
+
+    // Inner diamond (smaller, brighter)
+    const innerSize = halfSize * 0.6;
+    this.mainGraphics.fillStyle(primaryColor, 1);
+    this.mainGraphics.fillTriangle(0, -innerSize, innerSize, 0, 0, innerSize);
+    this.mainGraphics.fillTriangle(0, -innerSize, -innerSize, 0, 0, innerSize);
+
+    // Highlight
+    this.mainGraphics.fillStyle(0xffffff, 0.3);
+    this.mainGraphics.fillTriangle(0, -halfSize, -halfSize * 0.3, -halfSize * 0.3, halfSize * 0.3, -halfSize * 0.3);
+
+    // Border
+    this.mainGraphics.lineStyle(2, triggered ? 0xffffff : 0x00cc00, 1);
+    this.mainGraphics.beginPath();
+    this.mainGraphics.moveTo(0, -halfSize);
+    this.mainGraphics.lineTo(halfSize, 0);
+    this.mainGraphics.lineTo(0, halfSize);
+    this.mainGraphics.lineTo(-halfSize, 0);
+    this.mainGraphics.closePath();
+    this.mainGraphics.strokePath();
+
+    // Checkmark if triggered
+    if (triggered) {
+      this.mainGraphics.lineStyle(3, 0xffffff, 1);
+      this.mainGraphics.beginPath();
+      this.mainGraphics.moveTo(-innerSize * 0.5, 0);
+      this.mainGraphics.lineTo(-innerSize * 0.1, innerSize * 0.4);
+      this.mainGraphics.lineTo(innerSize * 0.5, -innerSize * 0.3);
+      this.mainGraphics.strokePath();
+    }
+  }
+}
+
+// =============================================================================
 // Object Pool Manager
 // =============================================================================
 
@@ -435,6 +582,8 @@ export interface ObjectPoolConfig {
   initialSpikes?: number;
   /** Initial pool size for portals */
   initialPortals?: number;
+  /** Initial pool size for checkpoints */
+  initialCheckpoints?: number;
   /** Maximum pool size (prevents unbounded growth) */
   maxPoolSize?: number;
 }
@@ -443,6 +592,7 @@ const DEFAULT_CONFIG: Required<ObjectPoolConfig> = {
   initialBlocks: 100,
   initialSpikes: 50,
   initialPortals: 20,
+  initialCheckpoints: 20,
   maxPoolSize: 2000,
 };
 
@@ -456,10 +606,12 @@ export class ObjectPool {
   private blockPool: PooledBlock[] = [];
   private spikePool: PooledSpike[] = [];
   private portalPool: PooledPortal[] = [];
+  private checkpointPool: PooledCheckpoint[] = [];
 
   private activeBlocks: PooledBlock[] = [];
   private activeSpikes: PooledSpike[] = [];
   private activePortals: PooledPortal[] = [];
+  private activeCheckpoints: PooledCheckpoint[] = [];
 
   constructor(scene: Phaser.Scene, config: ObjectPoolConfig = {}) {
     this.scene = scene;
@@ -486,6 +638,11 @@ export class ObjectPool {
     // Create initial portals
     for (let i = 0; i < this.config.initialPortals; i++) {
       this.portalPool.push(new PooledPortal(this.scene));
+    }
+
+    // Create initial checkpoints
+    for (let i = 0; i < this.config.initialCheckpoints; i++) {
+      this.checkpointPool.push(new PooledCheckpoint(this.scene));
     }
   }
 
@@ -615,6 +772,56 @@ export class ObjectPool {
   }
 
   // ===========================================================================
+  // Checkpoint Pool
+  // ===========================================================================
+
+  /**
+   * Get a checkpoint from the pool or create a new one.
+   */
+  acquireCheckpoint(gridX: number, gridY: number, checkpointId: number, name: string = ''): PooledCheckpoint {
+    let checkpoint = this.checkpointPool.pop();
+
+    if (!checkpoint) {
+      if (this.activeCheckpoints.length >= this.config.maxPoolSize) {
+        console.warn('Checkpoint pool exceeded max size');
+      }
+      checkpoint = new PooledCheckpoint(this.scene);
+    }
+
+    checkpoint.activate(gridX, gridY, checkpointId, name);
+    this.activeCheckpoints.push(checkpoint);
+    return checkpoint;
+  }
+
+  /**
+   * Return a checkpoint to the pool.
+   */
+  releaseCheckpoint(checkpoint: PooledCheckpoint): void {
+    const index = this.activeCheckpoints.indexOf(checkpoint);
+    if (index !== -1) {
+      this.activeCheckpoints.splice(index, 1);
+    }
+    checkpoint.deactivate();
+    this.checkpointPool.push(checkpoint);
+  }
+
+  /**
+   * Get all active checkpoints.
+   */
+  getActiveCheckpoints(): PooledCheckpoint[] {
+    return this.activeCheckpoints;
+  }
+
+  /**
+   * Reset all checkpoint triggers (for level restart).
+   */
+  resetCheckpointTriggers(): void {
+    for (const checkpoint of this.activeCheckpoints) {
+      checkpoint.resetTrigger();
+    }
+  }
+
+  // ===========================================================================
   // Bulk Operations
   // ===========================================================================
 
@@ -643,13 +850,20 @@ export class ObjectPool {
       this.portalPool.push(portal);
     }
     this.activePortals = [];
+
+    // Release all checkpoints
+    for (const checkpoint of this.activeCheckpoints) {
+      checkpoint.deactivate();
+      this.checkpointPool.push(checkpoint);
+    }
+    this.activeCheckpoints = [];
   }
 
   /**
    * Get all currently active objects (for collision detection).
    */
   getActiveObjects(): Poolable[] {
-    return [...this.activeBlocks, ...this.activeSpikes, ...this.activePortals];
+    return [...this.activeBlocks, ...this.activeSpikes, ...this.activePortals, ...this.activeCheckpoints];
   }
 
   /**
@@ -659,6 +873,7 @@ export class ObjectPool {
     blocks: { active: number; pooled: number };
     spikes: { active: number; pooled: number };
     portals: { active: number; pooled: number };
+    checkpoints: { active: number; pooled: number };
   } {
     return {
       blocks: {
@@ -672,6 +887,10 @@ export class ObjectPool {
       portals: {
         active: this.activePortals.length,
         pooled: this.portalPool.length,
+      },
+      checkpoints: {
+        active: this.activeCheckpoints.length,
+        pooled: this.checkpointPool.length,
       },
     };
   }
@@ -699,6 +918,12 @@ export class ObjectPool {
     for (const portal of this.activePortals) {
       portal.destroy();
     }
+    for (const checkpoint of this.checkpointPool) {
+      checkpoint.destroy();
+    }
+    for (const checkpoint of this.activeCheckpoints) {
+      checkpoint.destroy();
+    }
 
     this.blockPool = [];
     this.activeBlocks = [];
@@ -706,5 +931,7 @@ export class ObjectPool {
     this.activeSpikes = [];
     this.portalPool = [];
     this.activePortals = [];
+    this.checkpointPool = [];
+    this.activeCheckpoints = [];
   }
 }

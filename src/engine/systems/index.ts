@@ -8,12 +8,13 @@ export type { BackgroundConfig } from './Background';
 export { ParticleManager } from './ParticleManager';
 export type { ParticleConfig } from './ParticleManager';
 
-export { ObjectPool, PooledBlock, PooledSpike, PooledPortal } from './ObjectPool';
+export { ObjectPool, PooledBlock, PooledSpike, PooledPortal, PooledCheckpoint } from './ObjectPool';
 export type {
   Poolable,
   PooledBlockConfig,
   PooledSpikeConfig,
   PooledPortalConfig,
   PooledPortalType,
+  PooledCheckpointConfig,
   ObjectPoolConfig,
 } from './ObjectPool';

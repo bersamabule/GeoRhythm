@@ -8,12 +8,25 @@ import type { InputState } from '@core/physics';
 import { createDefaultInputState, GRID } from '@core/physics';
 
 import { gameConfig } from '@config/game.config';
-import { levelLoader, audioManager, type ParsedLevel, type ParsedLevelObject } from '@services/index';
+import {
+  levelLoader,
+  audioManager,
+  checkpointManager,
+  type ParsedLevel,
+  type ParsedLevelObject,
+} from '@services/index';
 
 import type { PlayerModeType, SpeedModeType } from '@generated/index';
 
 import { Player } from '../objects';
-import { Background, ParticleManager, ObjectPool, type Poolable, type PooledPortal } from '../systems';
+import {
+  Background,
+  ParticleManager,
+  ObjectPool,
+  type Poolable,
+  type PooledPortal,
+  type PooledCheckpoint,
+} from '../systems';
 
 /** Game scene state */
 interface GameState {
@@ -56,6 +69,7 @@ export class GameScene extends Phaser.Scene {
     up: Phaser.Input.Keyboard.Key;
     escape: Phaser.Input.Keyboard.Key;
     r: Phaser.Input.Keyboard.Key;
+    p: Phaser.Input.Keyboard.Key;
   };
 
   /** Visual systems */
@@ -75,6 +89,10 @@ export class GameScene extends Phaser.Scene {
 
   /** Trail spawn timer */
   private trailTimer: number = 0;
+
+  /** Practice mode UI elements */
+  private practiceModeText!: Phaser.GameObjects.Text;
+  private checkpointIndicator!: Phaser.GameObjects.Text;
 
   /** Current loaded level data */
   private currentLevel: ParsedLevel | null = null;
@@ -309,6 +327,14 @@ export class GameScene extends Phaser.Scene {
           obj.properties?.targetSpeed as SpeedModeType | undefined
         );
 
+      case 'checkpoint':
+        return this.objectPool.acquireCheckpoint(
+          obj.gridX,
+          obj.gridY,
+          obj.id,
+          (obj.properties?.name as string) ?? ''
+        );
+
       // TODO: Add more object types as they are implemented
       // case 'padYellow':
       // case 'orbYellow':
@@ -344,6 +370,7 @@ export class GameScene extends Phaser.Scene {
       up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP),
       escape: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC),
       r: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R),
+      p: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P),
     };
 
     // Mouse/touch input
@@ -401,6 +428,27 @@ export class GameScene extends Phaser.Scene {
     this.attemptText.setScrollFactor(0);
     this.attemptText.setOrigin(1, 0.5);
     this.attemptText.setDepth(1000);
+
+    // Practice mode indicator (bottom left)
+    this.practiceModeText = this.add.text(20, gameConfig.display.height - 20, '', {
+      fontSize: '16px',
+      color: '#00ff00',
+      fontFamily: 'Arial, sans-serif',
+    });
+    this.practiceModeText.setScrollFactor(0);
+    this.practiceModeText.setOrigin(0, 1);
+    this.practiceModeText.setDepth(1000);
+    this.updatePracticeModeUI();
+
+    // Checkpoint indicator (below practice mode text)
+    this.checkpointIndicator = this.add.text(20, gameConfig.display.height - 40, '', {
+      fontSize: '14px',
+      color: '#88ff88',
+      fontFamily: 'Arial, sans-serif',
+    });
+    this.checkpointIndicator.setScrollFactor(0);
+    this.checkpointIndicator.setOrigin(0, 1);
+    this.checkpointIndicator.setDepth(1000);
   }
 
   /**
@@ -417,6 +465,59 @@ export class GameScene extends Phaser.Scene {
     if (progress >= 1 && !this.state.isComplete) {
       this.onLevelComplete();
     }
+  }
+
+  /**
+   * Update practice mode UI elements.
+   */
+  private updatePracticeModeUI(): void {
+    if (checkpointManager.isPracticeMode) {
+      this.practiceModeText.setText('PRACTICE MODE (P to toggle)');
+      this.practiceModeText.setColor('#00ff00');
+
+      const checkpointCount = checkpointManager.getReachedCheckpointCount();
+      if (checkpointManager.hasCheckpoint()) {
+        this.checkpointIndicator.setText(`Checkpoints: ${checkpointCount}`);
+      } else {
+        this.checkpointIndicator.setText('No checkpoint set');
+      }
+    } else {
+      this.practiceModeText.setText('Press P for Practice Mode');
+      this.practiceModeText.setColor('#888888');
+      this.checkpointIndicator.setText('');
+    }
+  }
+
+  /**
+   * Toggle practice mode on/off.
+   */
+  private togglePracticeMode(): void {
+    checkpointManager.togglePracticeMode();
+    this.updatePracticeModeUI();
+
+    // Show feedback
+    const feedbackText = this.add.text(
+      gameConfig.display.width / 2,
+      gameConfig.display.height / 2,
+      checkpointManager.isPracticeMode ? 'Practice Mode ON' : 'Practice Mode OFF',
+      {
+        fontSize: '32px',
+        color: checkpointManager.isPracticeMode ? '#00ff00' : '#ff8800',
+        fontStyle: 'bold',
+      }
+    );
+    feedbackText.setScrollFactor(0);
+    feedbackText.setOrigin(0.5);
+    feedbackText.setDepth(2000);
+
+    this.tweens.add({
+      targets: feedbackText,
+      alpha: 0,
+      y: feedbackText.y - 50,
+      duration: 1000,
+      ease: 'Cubic.easeOut',
+      onComplete: () => feedbackText.destroy(),
+    });
   }
 
   /**
@@ -447,10 +548,61 @@ export class GameScene extends Phaser.Scene {
     // Camera shake
     this.cameras.main.shake(150, 0.01);
 
-    // Brief pause before restart
-    this.time.delayedCall(600, () => {
-      this.restart();
-    });
+    // Check if we should respawn at checkpoint (practice mode)
+    const checkpointState = checkpointManager.getRespawnState();
+    if (checkpointState) {
+      // Brief pause before checkpoint respawn
+      this.time.delayedCall(400, () => {
+        this.respawnAtCheckpoint(checkpointState);
+      });
+    } else {
+      // Brief pause before full restart
+      this.time.delayedCall(600, () => {
+        this.restart();
+      });
+    }
+  }
+
+  /**
+   * Respawn at a checkpoint (practice mode).
+   */
+  private respawnAtCheckpoint(checkpoint: import('@services/CheckpointManager').CheckpointState): void {
+    // Don't increment attempt counter for checkpoint respawn
+    this.state.isComplete = false;
+    this.state.gameTime = checkpoint.audioTime;
+    this.trailTimer = 0;
+
+    // Reset player to checkpoint state
+    this.player.respawnAtCheckpoint(
+      checkpoint.playerX,
+      checkpoint.playerY,
+      checkpoint.mode,
+      checkpoint.speed,
+      checkpoint.gravityInverted
+    );
+
+    // Clear particles
+    this.particles.clear();
+
+    // Don't reset checkpoint triggers - we want to keep them triggered
+    // Reset portal triggers
+    this.objectPool.resetPortalTriggers();
+
+    // Seek audio to checkpoint time
+    if (this.state.audioSyncEnabled) {
+      audioManager.seek(checkpoint.audioTime);
+      audioManager.play();
+    }
+
+    // Notify checkpoint manager
+    checkpointManager.notifyRespawn(checkpoint);
+
+    // Update UI
+    this.updatePracticeModeUI();
+
+    // Update progress bar
+    this.progressBar.width = 0;
+    this.progressGlow.width = 0;
   }
 
   /**
@@ -524,6 +676,12 @@ export class GameScene extends Phaser.Scene {
     // Reset portal triggers so they can be activated again
     this.objectPool.resetPortalTriggers();
 
+    // Reset checkpoint triggers
+    this.objectPool.resetCheckpointTriggers();
+
+    // Clear checkpoint states for new attempt
+    checkpointManager.resetTriggeredCheckpoints();
+
     // Restart audio from beginning
     if (this.state.audioSyncEnabled) {
       audioManager.restart();
@@ -577,11 +735,19 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    // Check for practice mode toggle
+    if (Phaser.Input.Keyboard.JustDown(this.keys.p)) {
+      this.togglePracticeMode();
+    }
+
     // Update player with game time (music-first approach)
     this.player.update(this.inputState, deltaSeconds, this.state.gameTime);
 
     // Check portal collisions
     this.checkPortalCollisions();
+
+    // Check checkpoint collisions
+    this.checkCheckpointCollisions();
 
     // Spawn trail particles periodically
     this.trailTimer += deltaSeconds;
@@ -674,6 +840,97 @@ export class GameScene extends Phaser.Scene {
         }
         break;
     }
+  }
+
+  /**
+   * Check for checkpoint collisions.
+   */
+  private checkCheckpointCollisions(): void {
+    const playerHitbox = this.player.getHitbox();
+    const checkpoints = this.objectPool.getActiveCheckpoints();
+
+    for (const checkpoint of checkpoints) {
+      if (!checkpoint.shouldTrigger()) {
+        continue;
+      }
+
+      // Simple AABB overlap check for checkpoint
+      const checkpointX = (checkpoint as Phaser.GameObjects.Container).x;
+      const checkpointY = (checkpoint as Phaser.GameObjects.Container).y;
+      const checkpointSize = 32; // Checkpoint collision size
+
+      const checkpointLeft = checkpointX - checkpointSize / 2;
+      const checkpointRight = checkpointX + checkpointSize / 2;
+      const checkpointTop = checkpointY - checkpointSize / 2;
+      const checkpointBottom = checkpointY + checkpointSize / 2;
+
+      // Check overlap
+      if (
+        playerHitbox.x < checkpointRight &&
+        playerHitbox.x + playerHitbox.width > checkpointLeft &&
+        playerHitbox.y < checkpointBottom &&
+        playerHitbox.y + playerHitbox.height > checkpointTop
+      ) {
+        // Trigger the checkpoint
+        checkpoint.trigger();
+        this.handleCheckpointTrigger(checkpoint);
+      }
+    }
+  }
+
+  /**
+   * Handle checkpoint trigger effects.
+   */
+  private handleCheckpointTrigger(checkpoint: PooledCheckpoint): void {
+    // Get current audio time
+    const audioTime = this.state.audioSyncEnabled
+      ? audioManager.getCurrentTime()
+      : this.state.gameTime;
+
+    // Record checkpoint with current player state
+    const checkpointState = checkpointManager.recordCheckpoint(
+      checkpoint.checkpointId,
+      this.player.getPhysicsState(),
+      audioTime,
+      Math.floor((checkpoint as Phaser.GameObjects.Container).x / GRID.UNIT_SIZE),
+      Math.floor((checkpoint as Phaser.GameObjects.Container).y / GRID.UNIT_SIZE)
+    );
+
+    // Show feedback if checkpoint was saved (practice mode)
+    if (checkpointState) {
+      this.showCheckpointFeedback();
+    }
+
+    // Update UI
+    this.updatePracticeModeUI();
+  }
+
+  /**
+   * Show visual feedback when reaching a checkpoint.
+   */
+  private showCheckpointFeedback(): void {
+    const feedbackText = this.add.text(
+      gameConfig.display.width / 2,
+      gameConfig.display.height / 3,
+      'Checkpoint!',
+      {
+        fontSize: '24px',
+        color: '#00ff00',
+        fontStyle: 'bold',
+      }
+    );
+    feedbackText.setScrollFactor(0);
+    feedbackText.setOrigin(0.5);
+    feedbackText.setDepth(2000);
+
+    this.tweens.add({
+      targets: feedbackText,
+      alpha: 0,
+      y: feedbackText.y - 30,
+      duration: 800,
+      ease: 'Cubic.easeOut',
+      onComplete: () => feedbackText.destroy(),
+    });
   }
 
   /**
