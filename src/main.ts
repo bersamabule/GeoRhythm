@@ -8,12 +8,17 @@ import Phaser from 'phaser';
 
 import { phaserConfig } from '@config/game.config';
 
-import { GameScene } from '@engine/scenes';
+import {
+  MainMenuScene,
+  LevelSelectScene,
+  SettingsScene,
+  GameScene,
+} from '@engine/scenes';
 
-// Configure scenes
+// Configure scenes - MainMenuScene is the entry point
 const config: Phaser.Types.Core.GameConfig = {
   ...phaserConfig,
-  scene: [GameScene],
+  scene: [MainMenuScene, LevelSelectScene, SettingsScene, GameScene],
 };
 
 // Create and start the game

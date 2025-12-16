@@ -26,3 +26,6 @@ export type {
   CheckpointDefinition,
   CheckpointEvents,
 } from './CheckpointManager';
+
+// Re-export LevelEntry from generated for convenience
+export type { LevelEntry } from '@generated/index';

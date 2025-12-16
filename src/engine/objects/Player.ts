@@ -434,9 +434,9 @@ export class Player extends Phaser.GameObjects.Container {
    * Apply a jump impulse to the player (used by jump pads/orbs).
    * The impulse is automatically adjusted for gravity direction.
    * @param force The base force to apply (positive = up in normal gravity)
-   * @param overrideGrounded If true, allows jump even if not grounded
+   * @param _overrideGrounded Reserved for future use - allows jump even if not grounded
    */
-  applyJumpImpulse(force: number, overrideGrounded: boolean = true): void {
+  applyJumpImpulse(force: number, _overrideGrounded: boolean = true): void {
     if (this.physicsState.isDead) return;
 
     // Adjust force direction based on gravity
@@ -598,10 +598,4 @@ export class Player extends Phaser.GameObjects.Container {
     this.emit('gravityFlip', this.physicsState.gravityInverted);
   }
 
-  /**
-   * Check if gravity is inverted.
-   */
-  isGravityInverted(): boolean {
-    return this.physicsState.gravityInverted;
-  }
 }

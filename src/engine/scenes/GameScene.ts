@@ -28,8 +28,6 @@ import {
   type PooledCheckpoint,
   type PooledPad,
   type PooledOrb,
-  type PadType,
-  type OrbType,
 } from '../systems';
 
 /** Game scene state */

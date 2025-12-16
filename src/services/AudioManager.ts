@@ -355,6 +355,30 @@ export class AudioManager {
   // ===========================================================================
 
   /**
+   * Get master volume.
+   * @returns Volume level (0-1)
+   */
+  getMasterVolume(): number {
+    return this.config.masterVolume;
+  }
+
+  /**
+   * Get music volume.
+   * @returns Volume level (0-1)
+   */
+  getMusicVolume(): number {
+    return this.config.musicVolume;
+  }
+
+  /**
+   * Get sound effects volume.
+   * @returns Volume level (0-1)
+   */
+  getSfxVolume(): number {
+    return this.config.sfxVolume;
+  }
+
+  /**
    * Set master volume.
    * @param volume Volume level (0-1)
    */
