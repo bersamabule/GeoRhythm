@@ -217,6 +217,10 @@ Examples:
 - [x] Phase 5: Jump pads (yellow/pink) - automatic jump on contact
 - [x] Phase 5: Jump orbs (yellow/blue) - jump on click while touching
 - [x] Phase 5: UI scenes (MainMenu, LevelSelect, Settings) - 165 tests passing
+- [x] Phase 6: SaveManager service for localStorage persistence - 198 tests passing
+- [x] Phase 6: Track attempts, deaths, jumps, and best progress
+- [x] Phase 6: Persist volume settings across sessions
+- [x] Phase 6: Display level progress in LevelSelectScene
 
 ### Recent Changes
 | Date | Change | Chronicle Entry |
@@ -268,8 +272,8 @@ Examples:
 | 2 | Level Loader (JSON parsing, pooling) | **Complete** |
 | 3 | Polish (audio, death, practice mode) | **Complete** |
 | 4 | Game Modes (ship, ball, portals) | **Complete** |
-| 5 | Interactive Objects (pads, orbs) & UI | **In Progress** |
-| 6 | Persistence (saves, progress) | Not Started |
+| 5 | Interactive Objects (pads, orbs) & UI | **Complete** |
+| 6 | Persistence (saves, progress) | **Complete** |
 | 7 | Level Editor (optional) | Not Started |
 
 ---
@@ -277,7 +281,7 @@ Examples:
 ## Session Continuity
 
 ### For Next Session
-> **Where I left off**: Phase 5 (UI & Interactive Objects) COMPLETE! Main menu, level select, and settings scenes implemented. 165 tests passing. All committed to GitHub.
+> **Where I left off**: Phase 6 (Persistence) COMPLETE! SaveManager implemented with localStorage for game progress tracking. 198 tests passing. All committed to GitHub.
 >
 > **What's working**:
 > - Phaser + TypeScript + Vite project setup
@@ -317,9 +321,16 @@ Examples:
 >   - **SettingsScene**: volume sliders for music/SFX
 >   - Scene transitions with fade effects
 >   - Volume getters added to AudioManager (getMusicVolume, getSfxVolume)
+> - **SaveManager Persistence**:
+>   - localStorage-based save system following `save-data.schema.json`
+>   - Tracks level attempts, deaths, jumps, best progress per level
+>   - Records level completions with best times
+>   - Persists volume settings across sessions
+>   - LevelSelectScene shows completion checkmarks and attempt counts
+>   - 33 unit tests for SaveManager
 >
-> **Next steps** (Phase 6):
-> 1. Persistence (saves, progress, localStorage)
+> **Next steps** (Phase 7):
+> 1. Level Editor (optional) or additional levels
 >
 > **Watch out for**:
 > - Physics code is in `src/core/physics/modes/` - keep it framework-agnostic
@@ -327,14 +338,16 @@ Examples:
 > - Portal triggers are reset on level restart via `objectPool.resetPortalTriggers()`
 > - Pad/orb triggers reset via `objectPool.resetPadTriggers()` and `resetOrbTriggers()`
 > - Use `npm run generate:types` if schemas change
-> - Run `npm test` to verify changes don't break physics (165 tests)
+> - Run `npm test` to verify changes don't break physics (198 tests)
 > - ObjectPool pre-creates: 100 blocks, 50 spikes, 20 portals, 20 checkpoints, 30 pads, 30 orbs
+> - SaveManager singleton at `saveManager` - don't create new instances
 >
 > **Key Files Modified This Session**:
-> - `src/engine/objects/Player.ts` - Added `applyJumpImpulse()`, `applyBoostImpulse()`, `isGravityInverted()`
-> - `src/engine/systems/ObjectPool.ts` - Added `PooledPad`, `PooledOrb` classes with full pooling
-> - `src/engine/scenes/GameScene.ts` - Added `checkPadCollisions()`, `checkOrbCollisions()` methods
-> - `public/levels/test-level.json` - Added pads/orbs for testing
+> - `src/services/SaveManager.ts` - New service for localStorage persistence
+> - `src/engine/scenes/GameScene.ts` - Track attempts, deaths, jumps, completions
+> - `src/engine/scenes/SettingsScene.ts` - Persist volume settings
+> - `src/engine/scenes/LevelSelectScene.ts` - Display progress indicators
+> - `tests/unit/services/SaveManager.test.ts` - 33 unit tests
 
 ### Chronicle Index
 See `docs/chronicle/` for session history.
