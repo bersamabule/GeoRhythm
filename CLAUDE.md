@@ -216,6 +216,7 @@ Examples:
 - [x] Phase 3: Practice mode with checkpoints - 165 tests passing
 - [x] Phase 5: Jump pads (yellow/pink) - automatic jump on contact
 - [x] Phase 5: Jump orbs (yellow/blue) - jump on click while touching
+- [x] Phase 5: UI scenes (MainMenu, LevelSelect, Settings) - 165 tests passing
 
 ### Recent Changes
 | Date | Change | Chronicle Entry |
@@ -230,6 +231,7 @@ Examples:
 | 2025-12-16 | Portal system (mode/gravity/speed) | - |
 | 2025-12-16 | Practice mode with checkpoints | - |
 | 2025-12-16 | Jump pads and orbs implemented | - |
+| 2025-12-16 | UI scenes (MainMenu, LevelSelect, Settings) | - |
 
 ### Known Issues
 | Issue | Severity | Notes |
@@ -275,7 +277,7 @@ Examples:
 ## Session Continuity
 
 ### For Next Session
-> **Where I left off**: Phase 5 (Interactive Objects) in progress! Jump pads and orbs implemented. 165 tests passing.
+> **Where I left off**: Phase 5 (UI & Interactive Objects) COMPLETE! Main menu, level select, and settings scenes implemented. 165 tests passing. All committed to GitHub.
 >
 > **What's working**:
 > - Phaser + TypeScript + Vite project setup
@@ -309,10 +311,15 @@ Examples:
 > - Progress bar and attempt counter
 > - Pause menu with Escape (pauses audio)
 > - Death effects: screen flash, camera shake, particles
+> - **UI Scenes**:
+>   - **MainMenuScene**: title, PLAY/LEVELS/SETTINGS buttons, keyboard shortcuts
+>   - **LevelSelectScene**: grid of levels from manifest, difficulty colors
+>   - **SettingsScene**: volume sliders for music/SFX
+>   - Scene transitions with fade effects
+>   - Volume getters added to AudioManager (getMusicVolume, getSfxVolume)
 >
-> **Next steps** (Phase 5 remaining / Phase 6):
-> 1. UI & Menus (main menu, level select)
-> 2. Persistence (saves, progress)
+> **Next steps** (Phase 6):
+> 1. Persistence (saves, progress, localStorage)
 >
 > **Watch out for**:
 > - Physics code is in `src/core/physics/modes/` - keep it framework-agnostic
@@ -322,6 +329,12 @@ Examples:
 > - Use `npm run generate:types` if schemas change
 > - Run `npm test` to verify changes don't break physics (165 tests)
 > - ObjectPool pre-creates: 100 blocks, 50 spikes, 20 portals, 20 checkpoints, 30 pads, 30 orbs
+>
+> **Key Files Modified This Session**:
+> - `src/engine/objects/Player.ts` - Added `applyJumpImpulse()`, `applyBoostImpulse()`, `isGravityInverted()`
+> - `src/engine/systems/ObjectPool.ts` - Added `PooledPad`, `PooledOrb` classes with full pooling
+> - `src/engine/scenes/GameScene.ts` - Added `checkPadCollisions()`, `checkOrbCollisions()` methods
+> - `public/levels/test-level.json` - Added pads/orbs for testing
 
 ### Chronicle Index
 See `docs/chronicle/` for session history.
