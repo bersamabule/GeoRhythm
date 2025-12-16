@@ -214,6 +214,8 @@ Examples:
 - [x] Phase 4: Mode portals (mode, gravity, speed)
 - [x] Phase 4: Portal pooling and collision detection
 - [x] Phase 3: Practice mode with checkpoints - 165 tests passing
+- [x] Phase 5: Jump pads (yellow/pink) - automatic jump on contact
+- [x] Phase 5: Jump orbs (yellow/blue) - jump on click while touching
 
 ### Recent Changes
 | Date | Change | Chronicle Entry |
@@ -227,6 +229,7 @@ Examples:
 | 2025-12-16 | ShipMode & BallMode physics implemented | - |
 | 2025-12-16 | Portal system (mode/gravity/speed) | - |
 | 2025-12-16 | Practice mode with checkpoints | - |
+| 2025-12-16 | Jump pads and orbs implemented | - |
 
 ### Known Issues
 | Issue | Severity | Notes |
@@ -263,7 +266,7 @@ Examples:
 | 2 | Level Loader (JSON parsing, pooling) | **Complete** |
 | 3 | Polish (audio, death, practice mode) | **Complete** |
 | 4 | Game Modes (ship, ball, portals) | **Complete** |
-| 5 | UI & Menus | Not Started |
+| 5 | Interactive Objects (pads, orbs) & UI | **In Progress** |
 | 6 | Persistence (saves, progress) | Not Started |
 | 7 | Level Editor (optional) | Not Started |
 
@@ -272,7 +275,7 @@ Examples:
 ## Session Continuity
 
 ### For Next Session
-> **Where I left off**: Phase 3 (Practice Mode) is complete! Checkpoints with respawn functionality implemented. 165 tests passing.
+> **Where I left off**: Phase 5 (Interactive Objects) in progress! Jump pads and orbs implemented. 165 tests passing.
 >
 > **What's working**:
 > - Phaser + TypeScript + Vite project setup
@@ -283,7 +286,7 @@ Examples:
 >   - **BallMode**: gravity flip on tap (rolls on floor/ceiling)
 > - AABB collision detection with proper resolution
 > - **LevelLoader service** with manifest support (`getManifest()`, `loadLevel(id)`)
-> - **ObjectPool system** for efficient sprite recycling (`acquireBlock`, `acquireSpike`, `acquirePortal`, `acquireCheckpoint`, `releaseAll`)
+> - **ObjectPool system** for efficient sprite recycling (`acquireBlock`, `acquireSpike`, `acquirePortal`, `acquireCheckpoint`, `acquirePad`, `acquireOrb`, `releaseAll`)
 > - **Portal system**: mode portals, gravity portals, speed portals
 > - **Practice Mode with Checkpoints**:
 >   - Press 'P' to toggle practice mode
@@ -291,25 +294,34 @@ Examples:
 >   - On death in practice mode: respawn at last checkpoint
 >   - Audio seeks to checkpoint time on respawn
 >   - Visual feedback for checkpoint triggers
+> - **Jump Pads** (yellow/pink):
+>   - Automatic jump on contact (no input needed)
+>   - Yellow pads: normal jump (900 force)
+>   - Pink pads: higher jump (1100 force)
+> - **Jump Orbs** (yellow/blue):
+>   - Jump only when clicking/tapping while touching orb
+>   - Visual feedback (glow) when player is inside orb
+>   - Yellow orbs: standard boost (850 force)
+>   - Blue orbs: lower boost for precision (750 force)
 > - **AudioManager** with Howler.js for music-first game loop
-> - Test level JSON file with checkpoints at `public/levels/test-level.json`
+> - Test level JSON file with pads/orbs at `public/levels/test-level.json`
 > - Player visual updates when changing modes (cube/ship/ball icons)
 > - Progress bar and attempt counter
 > - Pause menu with Escape (pauses audio)
 > - Death effects: screen flash, camera shake, particles
 >
-> **Next steps** (Phase 5):
-> 1. Jump pads and jump orbs (interactive objects)
-> 2. UI & Menus (main menu, level select)
-> 3. Persistence (saves, progress)
+> **Next steps** (Phase 5 remaining / Phase 6):
+> 1. UI & Menus (main menu, level select)
+> 2. Persistence (saves, progress)
 >
 > **Watch out for**:
 > - Physics code is in `src/core/physics/modes/` - keep it framework-agnostic
 > - Player mode switching via `player.setMode('ship')` triggers visual updates
 > - Portal triggers are reset on level restart via `objectPool.resetPortalTriggers()`
+> - Pad/orb triggers reset via `objectPool.resetPadTriggers()` and `resetOrbTriggers()`
 > - Use `npm run generate:types` if schemas change
-> - Run `npm test` to verify changes don't break physics (138 tests)
-> - ObjectPool pre-creates 150 blocks, 75 spikes, and 20 portals by default
+> - Run `npm test` to verify changes don't break physics (165 tests)
+> - ObjectPool pre-creates: 100 blocks, 50 spikes, 20 portals, 20 checkpoints, 30 pads, 30 orbs
 
 ### Chronicle Index
 See `docs/chronicle/` for session history.

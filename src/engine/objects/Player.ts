@@ -426,6 +426,46 @@ export class Player extends Phaser.GameObjects.Container {
     return this.physicsState.isGrounded;
   }
 
+  isGravityInverted(): boolean {
+    return this.physicsState.gravityInverted;
+  }
+
+  /**
+   * Apply a jump impulse to the player (used by jump pads/orbs).
+   * The impulse is automatically adjusted for gravity direction.
+   * @param force The base force to apply (positive = up in normal gravity)
+   * @param overrideGrounded If true, allows jump even if not grounded
+   */
+  applyJumpImpulse(force: number, overrideGrounded: boolean = true): void {
+    if (this.physicsState.isDead) return;
+
+    // Adjust force direction based on gravity
+    const direction = this.physicsState.gravityInverted ? 1 : -1;
+    this.physicsState.velocity.y = force * direction;
+
+    // Mark as not grounded since we're now airborne
+    this.physicsState.isGrounded = false;
+
+    // Emit jump event for particles/sound
+    this.emit('jump', this.physicsState.position.x, this.physicsState.position.y);
+  }
+
+  /**
+   * Apply a boost impulse without affecting grounded state.
+   * Used by orbs that don't fully reset jump mechanics.
+   * @param force The force to add to current velocity
+   */
+  applyBoostImpulse(force: number): void {
+    if (this.physicsState.isDead) return;
+
+    // Adjust force direction based on gravity
+    const direction = this.physicsState.gravityInverted ? 1 : -1;
+    this.physicsState.velocity.y = force * direction;
+
+    // Emit jump event for particles/sound
+    this.emit('jump', this.physicsState.position.x, this.physicsState.position.y);
+  }
+
   setSpeed(speedMode: keyof typeof SPEEDS): void {
     this.currentSpeed = SPEEDS[speedMode];
     this.physicsState.speed = speedMode;

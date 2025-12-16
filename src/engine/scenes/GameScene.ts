@@ -26,6 +26,10 @@ import {
   type Poolable,
   type PooledPortal,
   type PooledCheckpoint,
+  type PooledPad,
+  type PooledOrb,
+  type PadType,
+  type OrbType,
 } from '../systems';
 
 /** Game scene state */
@@ -335,10 +339,17 @@ export class GameScene extends Phaser.Scene {
           (obj.properties?.name as string) ?? ''
         );
 
-      // TODO: Add more object types as they are implemented
-      // case 'padYellow':
-      // case 'orbYellow':
-      // etc.
+      case 'padYellow':
+        return this.objectPool.acquirePad(obj.gridX, obj.gridY, 'yellow');
+
+      case 'padPink':
+        return this.objectPool.acquirePad(obj.gridX, obj.gridY, 'pink');
+
+      case 'orbYellow':
+        return this.objectPool.acquireOrb(obj.gridX, obj.gridY, 'yellow');
+
+      case 'orbBlue':
+        return this.objectPool.acquireOrb(obj.gridX, obj.gridY, 'blue');
 
       default:
         // Skip unimplemented object types
@@ -679,6 +690,10 @@ export class GameScene extends Phaser.Scene {
     // Reset checkpoint triggers
     this.objectPool.resetCheckpointTriggers();
 
+    // Reset pad and orb triggers
+    this.objectPool.resetPadTriggers();
+    this.objectPool.resetOrbTriggers();
+
     // Clear checkpoint states for new attempt
     checkpointManager.resetTriggeredCheckpoints();
 
@@ -748,6 +763,12 @@ export class GameScene extends Phaser.Scene {
 
     // Check checkpoint collisions
     this.checkCheckpointCollisions();
+
+    // Check pad collisions (automatic jump on contact)
+    this.checkPadCollisions();
+
+    // Check orb collisions (jump on click while touching)
+    this.checkOrbCollisions();
 
     // Spawn trail particles periodically
     this.trailTimer += deltaSeconds;
@@ -931,6 +952,123 @@ export class GameScene extends Phaser.Scene {
       ease: 'Cubic.easeOut',
       onComplete: () => feedbackText.destroy(),
     });
+  }
+
+  // ===========================================================================
+  // Jump Pad Collision
+  // ===========================================================================
+
+  /**
+   * Check for pad collisions - automatic jump when touching pad surface.
+   */
+  private checkPadCollisions(): void {
+    const playerHitbox = this.player.getHitbox();
+    const pads = this.objectPool.getActivePads();
+
+    for (const pad of pads) {
+      if (!pad.shouldTrigger()) {
+        continue;
+      }
+
+      // Pad collision area (top surface)
+      const padX = (pad as Phaser.GameObjects.Container).x;
+      const padY = (pad as Phaser.GameObjects.Container).y;
+      const padWidth = 40; // Match visual width
+      const padHeight = 16; // Only top portion triggers
+
+      const padLeft = padX - padWidth / 2;
+      const padRight = padX + padWidth / 2;
+      const padTop = padY - padHeight;
+      const padBottom = padY;
+
+      // Check if player is landing on pad (from above)
+      const playerBottom = playerHitbox.y + playerHitbox.height;
+      const playerCenterX = playerHitbox.x + playerHitbox.width / 2;
+
+      if (
+        playerCenterX > padLeft &&
+        playerCenterX < padRight &&
+        playerBottom > padTop &&
+        playerBottom < padBottom + 10 && // Small tolerance
+        playerHitbox.y < padTop // Player is above pad
+      ) {
+        // Trigger the pad
+        pad.trigger();
+        this.handlePadTrigger(pad);
+      }
+    }
+  }
+
+  /**
+   * Handle pad trigger - apply jump impulse.
+   */
+  private handlePadTrigger(pad: PooledPad): void {
+    // Apply jump impulse to player
+    this.player.applyJumpImpulse(pad.jumpForce);
+
+    // Play jump sound
+    audioManager.playClick();
+
+    // Create particles at pad position
+    const padX = (pad as Phaser.GameObjects.Container).x;
+    const padY = (pad as Phaser.GameObjects.Container).y;
+    this.particles.createJumpDust(padX, padY - 10);
+  }
+
+  // ===========================================================================
+  // Jump Orb Collision
+  // ===========================================================================
+
+  /**
+   * Check for orb collisions - jump only when player clicks while touching orb.
+   */
+  private checkOrbCollisions(): void {
+    const playerHitbox = this.player.getHitbox();
+    const orbs = this.objectPool.getActiveOrbs();
+
+    for (const orb of orbs) {
+      // Orb collision area (circular trigger zone)
+      const orbX = (orb as Phaser.GameObjects.Container).x;
+      const orbY = (orb as Phaser.GameObjects.Container).y;
+      const orbRadius = 20; // Match visual size
+
+      const orbLeft = orbX - orbRadius;
+      const orbRight = orbX + orbRadius;
+      const orbTop = orbY - orbRadius;
+      const orbBottom = orbY + orbRadius;
+
+      // Check if player overlaps orb trigger zone
+      const isOverlapping =
+        playerHitbox.x < orbRight &&
+        playerHitbox.x + playerHitbox.width > orbLeft &&
+        playerHitbox.y < orbBottom &&
+        playerHitbox.y + playerHitbox.height > orbTop;
+
+      // Update orb hover state (for visual feedback)
+      orb.setPlayerInside(isOverlapping);
+
+      // Check if player clicks while overlapping an untriggered orb
+      if (isOverlapping && orb.shouldTrigger() && this.inputState.jumpPressed) {
+        orb.trigger();
+        this.handleOrbTrigger(orb);
+      }
+    }
+  }
+
+  /**
+   * Handle orb trigger - apply boost impulse.
+   */
+  private handleOrbTrigger(orb: PooledOrb): void {
+    // Apply boost impulse to player (maintains momentum better than full jump)
+    this.player.applyBoostImpulse(orb.jumpForce);
+
+    // Play orb activation sound
+    audioManager.playClick();
+
+    // Create particles at orb position
+    const orbX = (orb as Phaser.GameObjects.Container).x;
+    const orbY = (orb as Phaser.GameObjects.Container).y;
+    this.particles.createJumpDust(orbX, orbY);
   }
 
   /**

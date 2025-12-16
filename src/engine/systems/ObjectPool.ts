@@ -572,6 +572,306 @@ export class PooledCheckpoint extends Phaser.GameObjects.Container implements Po
 }
 
 // =============================================================================
+// Pooled Jump Pad
+// =============================================================================
+
+export type PadType = 'yellow' | 'pink';
+
+export interface PooledPadConfig {
+  padType?: PadType;
+}
+
+/** Pad colors and jump forces */
+const PAD_CONFIG: Record<PadType, { primary: number; secondary: number; glow: number; jumpForce: number }> = {
+  yellow: { primary: 0xffff00, secondary: 0xccaa00, glow: 0xffff00, jumpForce: 900 },
+  pink: { primary: 0xff66ff, secondary: 0xcc44cc, glow: 0xff66ff, jumpForce: 1100 }, // Higher jump
+};
+
+/**
+ * Poolable jump pad that launches the player when touched.
+ * Yellow pads = normal jump, Pink pads = higher jump.
+ */
+export class PooledPad extends Phaser.GameObjects.Container implements Poolable {
+  readonly collisionLayer = CollisionLayer.SOLID; // Pads are solid platforms
+
+  type: ObjectTypeType = 'padYellow';
+  padType: PadType = 'yellow';
+  jumpForce: number = 900;
+
+  private _active: boolean = false;
+  private _triggered: boolean = false;
+
+  private mainGraphics: Phaser.GameObjects.Graphics;
+  private arrowGraphics: Phaser.GameObjects.Graphics;
+
+  constructor(scene: Phaser.Scene, config: PooledPadConfig = {}) {
+    super(scene, 0, 0);
+
+    this.padType = config.padType ?? 'yellow';
+    this.type = this.padType === 'yellow' ? 'padYellow' : 'padPink';
+    this.jumpForce = PAD_CONFIG[this.padType].jumpForce;
+
+    this.mainGraphics = scene.add.graphics();
+    this.arrowGraphics = scene.add.graphics();
+
+    this.add(this.mainGraphics);
+    this.add(this.arrowGraphics);
+
+    this.redrawPad();
+
+    this.setDepth(150);
+    this.setVisible(false);
+    this.setActive(false);
+
+    scene.add.existing(this);
+  }
+
+  activate(gridX: number, gridY: number, padType: PadType = 'yellow'): void {
+    const pixelX = gridX * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+    const pixelY = gridY * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+
+    if (this.padType !== padType) {
+      this.padType = padType;
+      this.type = padType === 'yellow' ? 'padYellow' : 'padPink';
+      this.jumpForce = PAD_CONFIG[padType].jumpForce;
+      this.redrawPad();
+    }
+
+    this._triggered = false;
+
+    this.setPosition(pixelX, pixelY);
+    this.setVisible(true);
+    this.setActive(true);
+    this._active = true;
+  }
+
+  deactivate(): void {
+    this.setVisible(false);
+    this.setActive(false);
+    this._active = false;
+    this._triggered = false;
+  }
+
+  isActive(): boolean {
+    return this._active;
+  }
+
+  shouldTrigger(): boolean {
+    return !this._triggered;
+  }
+
+  trigger(): void {
+    this._triggered = true;
+  }
+
+  resetTrigger(): void {
+    this._triggered = false;
+  }
+
+  private redrawPad(): void {
+    this.mainGraphics.clear();
+    this.arrowGraphics.clear();
+
+    const colors = PAD_CONFIG[this.padType];
+    const width = SIZES.BLOCK;
+    const height = SIZES.BLOCK * 0.4;
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Outer glow
+    this.mainGraphics.fillStyle(colors.glow, 0.3);
+    this.mainGraphics.fillRoundedRect(-halfWidth - 4, -halfHeight - 4, width + 8, height + 8, 6);
+
+    // Main body (trapezoid-like shape)
+    this.mainGraphics.fillStyle(colors.secondary, 1);
+    this.mainGraphics.fillRoundedRect(-halfWidth, -halfHeight, width, height, 4);
+
+    // Top surface (brighter)
+    this.mainGraphics.fillStyle(colors.primary, 1);
+    this.mainGraphics.fillRoundedRect(-halfWidth + 2, -halfHeight, width - 4, height * 0.5, 3);
+
+    // Spring coils visual
+    this.mainGraphics.lineStyle(2, colors.secondary, 0.8);
+    const coilSpacing = width / 5;
+    for (let i = 1; i < 5; i++) {
+      const x = -halfWidth + i * coilSpacing;
+      this.mainGraphics.beginPath();
+      this.mainGraphics.moveTo(x, -halfHeight + height * 0.5);
+      this.mainGraphics.lineTo(x, halfHeight - 2);
+      this.mainGraphics.strokePath();
+    }
+
+    // Highlight
+    this.mainGraphics.fillStyle(0xffffff, 0.4);
+    this.mainGraphics.fillRect(-halfWidth + 4, -halfHeight + 2, width - 8, 3);
+
+    // Border
+    this.mainGraphics.lineStyle(2, colors.secondary, 1);
+    this.mainGraphics.strokeRoundedRect(-halfWidth, -halfHeight, width, height, 4);
+
+    // Up arrow indicator
+    this.arrowGraphics.fillStyle(0xffffff, 0.9);
+    this.arrowGraphics.fillTriangle(0, -halfHeight - 8, -6, -halfHeight + 2, 6, -halfHeight + 2);
+  }
+}
+
+// =============================================================================
+// Pooled Jump Orb
+// =============================================================================
+
+export type OrbType = 'yellow' | 'blue';
+
+export interface PooledOrbConfig {
+  orbType?: OrbType;
+}
+
+/** Orb colors and jump forces */
+const ORB_CONFIG: Record<OrbType, { primary: number; secondary: number; glow: number; jumpForce: number }> = {
+  yellow: { primary: 0xffff00, secondary: 0xffaa00, glow: 0xffff00, jumpForce: 850 },
+  blue: { primary: 0x00aaff, secondary: 0x0066cc, glow: 0x00aaff, jumpForce: 750 }, // Gravity-flip style
+};
+
+/**
+ * Poolable jump orb that launches the player when clicked while touching.
+ * Yellow orbs = standard jump, Blue orbs = lower jump (for precision).
+ */
+export class PooledOrb extends Phaser.GameObjects.Container implements Poolable {
+  readonly collisionLayer = CollisionLayer.PORTAL; // Orbs are non-solid triggers
+
+  type: ObjectTypeType = 'orbYellow';
+  orbType: OrbType = 'yellow';
+  jumpForce: number = 850;
+
+  private _active: boolean = false;
+  private _triggered: boolean = false;
+  private _playerInside: boolean = false;
+
+  private mainGraphics: Phaser.GameObjects.Graphics;
+  private coreGraphics: Phaser.GameObjects.Graphics;
+
+  constructor(scene: Phaser.Scene, config: PooledOrbConfig = {}) {
+    super(scene, 0, 0);
+
+    this.orbType = config.orbType ?? 'yellow';
+    this.type = this.orbType === 'yellow' ? 'orbYellow' : 'orbBlue';
+    this.jumpForce = ORB_CONFIG[this.orbType].jumpForce;
+
+    this.mainGraphics = scene.add.graphics();
+    this.coreGraphics = scene.add.graphics();
+
+    this.add(this.mainGraphics);
+    this.add(this.coreGraphics);
+
+    this.redrawOrb(false);
+
+    this.setDepth(160);
+    this.setVisible(false);
+    this.setActive(false);
+
+    scene.add.existing(this);
+  }
+
+  activate(gridX: number, gridY: number, orbType: OrbType = 'yellow'): void {
+    const pixelX = gridX * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+    const pixelY = gridY * GRID.UNIT_SIZE + GRID.UNIT_SIZE / 2;
+
+    if (this.orbType !== orbType) {
+      this.orbType = orbType;
+      this.type = orbType === 'yellow' ? 'orbYellow' : 'orbBlue';
+      this.jumpForce = ORB_CONFIG[orbType].jumpForce;
+    }
+
+    this._triggered = false;
+    this._playerInside = false;
+    this.redrawOrb(false);
+
+    this.setPosition(pixelX, pixelY);
+    this.setVisible(true);
+    this.setActive(true);
+    this._active = true;
+  }
+
+  deactivate(): void {
+    this.setVisible(false);
+    this.setActive(false);
+    this._active = false;
+    this._triggered = false;
+    this._playerInside = false;
+  }
+
+  isActive(): boolean {
+    return this._active;
+  }
+
+  /** Check if orb can be triggered (not yet triggered this pass) */
+  shouldTrigger(): boolean {
+    return !this._triggered;
+  }
+
+  /** Mark as triggered (player clicked while inside) */
+  trigger(): void {
+    this._triggered = true;
+    this.redrawOrb(true); // Show triggered state briefly
+  }
+
+  resetTrigger(): void {
+    this._triggered = false;
+    this._playerInside = false;
+    this.redrawOrb(false);
+  }
+
+  /** Mark player as inside the orb's trigger zone */
+  setPlayerInside(inside: boolean): void {
+    if (this._playerInside !== inside) {
+      this._playerInside = inside;
+      if (!this._triggered) {
+        this.redrawOrb(false); // Update glow based on hover
+      }
+    }
+  }
+
+  /** Check if player is inside trigger zone */
+  isPlayerInside(): boolean {
+    return this._playerInside;
+  }
+
+  private redrawOrb(triggered: boolean): void {
+    this.mainGraphics.clear();
+    this.coreGraphics.clear();
+
+    const colors = ORB_CONFIG[this.orbType];
+    const radius = SIZES.PLAYER * 0.4;
+
+    // Outer glow - brighter when player is hovering or triggered
+    const glowAlpha = triggered ? 0.8 : this._playerInside ? 0.5 : 0.25;
+    const glowRadius = triggered ? radius * 1.8 : this._playerInside ? radius * 1.5 : radius * 1.3;
+    this.mainGraphics.fillStyle(colors.glow, glowAlpha);
+    this.mainGraphics.fillCircle(0, 0, glowRadius);
+
+    // Main orb body
+    this.mainGraphics.fillStyle(colors.secondary, 1);
+    this.mainGraphics.fillCircle(0, 0, radius);
+
+    // Inner ring
+    this.mainGraphics.lineStyle(3, colors.primary, 0.8);
+    this.mainGraphics.strokeCircle(0, 0, radius * 0.7);
+
+    // Core (brightest part)
+    const coreColor = triggered ? 0xffffff : colors.primary;
+    this.coreGraphics.fillStyle(coreColor, triggered ? 1 : 0.9);
+    this.coreGraphics.fillCircle(0, 0, radius * 0.4);
+
+    // Highlight
+    this.coreGraphics.fillStyle(0xffffff, 0.6);
+    this.coreGraphics.fillCircle(-radius * 0.2, -radius * 0.2, radius * 0.15);
+
+    // Outer border
+    this.mainGraphics.lineStyle(2, triggered ? 0xffffff : colors.primary, 1);
+    this.mainGraphics.strokeCircle(0, 0, radius);
+  }
+}
+
+// =============================================================================
 // Object Pool Manager
 // =============================================================================
 
@@ -584,6 +884,10 @@ export interface ObjectPoolConfig {
   initialPortals?: number;
   /** Initial pool size for checkpoints */
   initialCheckpoints?: number;
+  /** Initial pool size for jump pads */
+  initialPads?: number;
+  /** Initial pool size for jump orbs */
+  initialOrbs?: number;
   /** Maximum pool size (prevents unbounded growth) */
   maxPoolSize?: number;
 }
@@ -593,6 +897,8 @@ const DEFAULT_CONFIG: Required<ObjectPoolConfig> = {
   initialSpikes: 50,
   initialPortals: 20,
   initialCheckpoints: 20,
+  initialPads: 30,
+  initialOrbs: 30,
   maxPoolSize: 2000,
 };
 
@@ -607,11 +913,15 @@ export class ObjectPool {
   private spikePool: PooledSpike[] = [];
   private portalPool: PooledPortal[] = [];
   private checkpointPool: PooledCheckpoint[] = [];
+  private padPool: PooledPad[] = [];
+  private orbPool: PooledOrb[] = [];
 
   private activeBlocks: PooledBlock[] = [];
   private activeSpikes: PooledSpike[] = [];
   private activePortals: PooledPortal[] = [];
   private activeCheckpoints: PooledCheckpoint[] = [];
+  private activePads: PooledPad[] = [];
+  private activeOrbs: PooledOrb[] = [];
 
   constructor(scene: Phaser.Scene, config: ObjectPoolConfig = {}) {
     this.scene = scene;
@@ -643,6 +953,16 @@ export class ObjectPool {
     // Create initial checkpoints
     for (let i = 0; i < this.config.initialCheckpoints; i++) {
       this.checkpointPool.push(new PooledCheckpoint(this.scene));
+    }
+
+    // Create initial pads
+    for (let i = 0; i < this.config.initialPads; i++) {
+      this.padPool.push(new PooledPad(this.scene));
+    }
+
+    // Create initial orbs
+    for (let i = 0; i < this.config.initialOrbs; i++) {
+      this.orbPool.push(new PooledOrb(this.scene));
     }
   }
 
@@ -822,6 +1142,106 @@ export class ObjectPool {
   }
 
   // ===========================================================================
+  // Pad Pool
+  // ===========================================================================
+
+  /**
+   * Get a pad from the pool or create a new one.
+   */
+  acquirePad(gridX: number, gridY: number, padType: PadType = 'yellow'): PooledPad {
+    let pad = this.padPool.pop();
+
+    if (!pad) {
+      if (this.activePads.length >= this.config.maxPoolSize) {
+        console.warn('Pad pool exceeded max size');
+      }
+      pad = new PooledPad(this.scene);
+    }
+
+    pad.activate(gridX, gridY, padType);
+    this.activePads.push(pad);
+    return pad;
+  }
+
+  /**
+   * Return a pad to the pool.
+   */
+  releasePad(pad: PooledPad): void {
+    const index = this.activePads.indexOf(pad);
+    if (index !== -1) {
+      this.activePads.splice(index, 1);
+    }
+    pad.deactivate();
+    this.padPool.push(pad);
+  }
+
+  /**
+   * Get all active pads.
+   */
+  getActivePads(): PooledPad[] {
+    return this.activePads;
+  }
+
+  /**
+   * Reset all pad triggers (for level restart).
+   */
+  resetPadTriggers(): void {
+    for (const pad of this.activePads) {
+      pad.resetTrigger();
+    }
+  }
+
+  // ===========================================================================
+  // Orb Pool
+  // ===========================================================================
+
+  /**
+   * Get an orb from the pool or create a new one.
+   */
+  acquireOrb(gridX: number, gridY: number, orbType: OrbType = 'yellow'): PooledOrb {
+    let orb = this.orbPool.pop();
+
+    if (!orb) {
+      if (this.activeOrbs.length >= this.config.maxPoolSize) {
+        console.warn('Orb pool exceeded max size');
+      }
+      orb = new PooledOrb(this.scene);
+    }
+
+    orb.activate(gridX, gridY, orbType);
+    this.activeOrbs.push(orb);
+    return orb;
+  }
+
+  /**
+   * Return an orb to the pool.
+   */
+  releaseOrb(orb: PooledOrb): void {
+    const index = this.activeOrbs.indexOf(orb);
+    if (index !== -1) {
+      this.activeOrbs.splice(index, 1);
+    }
+    orb.deactivate();
+    this.orbPool.push(orb);
+  }
+
+  /**
+   * Get all active orbs.
+   */
+  getActiveOrbs(): PooledOrb[] {
+    return this.activeOrbs;
+  }
+
+  /**
+   * Reset all orb triggers (for level restart).
+   */
+  resetOrbTriggers(): void {
+    for (const orb of this.activeOrbs) {
+      orb.resetTrigger();
+    }
+  }
+
+  // ===========================================================================
   // Bulk Operations
   // ===========================================================================
 
@@ -857,13 +1277,34 @@ export class ObjectPool {
       this.checkpointPool.push(checkpoint);
     }
     this.activeCheckpoints = [];
+
+    // Release all pads
+    for (const pad of this.activePads) {
+      pad.deactivate();
+      this.padPool.push(pad);
+    }
+    this.activePads = [];
+
+    // Release all orbs
+    for (const orb of this.activeOrbs) {
+      orb.deactivate();
+      this.orbPool.push(orb);
+    }
+    this.activeOrbs = [];
   }
 
   /**
    * Get all currently active objects (for collision detection).
    */
   getActiveObjects(): Poolable[] {
-    return [...this.activeBlocks, ...this.activeSpikes, ...this.activePortals, ...this.activeCheckpoints];
+    return [
+      ...this.activeBlocks,
+      ...this.activeSpikes,
+      ...this.activePortals,
+      ...this.activeCheckpoints,
+      ...this.activePads,
+      ...this.activeOrbs,
+    ];
   }
 
   /**
@@ -874,6 +1315,8 @@ export class ObjectPool {
     spikes: { active: number; pooled: number };
     portals: { active: number; pooled: number };
     checkpoints: { active: number; pooled: number };
+    pads: { active: number; pooled: number };
+    orbs: { active: number; pooled: number };
   } {
     return {
       blocks: {
@@ -891,6 +1334,14 @@ export class ObjectPool {
       checkpoints: {
         active: this.activeCheckpoints.length,
         pooled: this.checkpointPool.length,
+      },
+      pads: {
+        active: this.activePads.length,
+        pooled: this.padPool.length,
+      },
+      orbs: {
+        active: this.activeOrbs.length,
+        pooled: this.orbPool.length,
       },
     };
   }
@@ -924,6 +1375,18 @@ export class ObjectPool {
     for (const checkpoint of this.activeCheckpoints) {
       checkpoint.destroy();
     }
+    for (const pad of this.padPool) {
+      pad.destroy();
+    }
+    for (const pad of this.activePads) {
+      pad.destroy();
+    }
+    for (const orb of this.orbPool) {
+      orb.destroy();
+    }
+    for (const orb of this.activeOrbs) {
+      orb.destroy();
+    }
 
     this.blockPool = [];
     this.activeBlocks = [];
@@ -933,5 +1396,9 @@ export class ObjectPool {
     this.activePortals = [];
     this.checkpointPool = [];
     this.activeCheckpoints = [];
+    this.padPool = [];
+    this.activePads = [];
+    this.orbPool = [];
+    this.activeOrbs = [];
   }
 }
